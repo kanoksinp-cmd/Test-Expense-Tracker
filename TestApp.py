@@ -21,7 +21,19 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* ── Hide default sidebar toggle & header padding ── */
+/* ════════════════════════════════════════════
+   RESET & FORCE LIGHT MODE (ป้องกัน dark mode)
+   ════════════════════════════════════════════ */
+:root {
+    color-scheme: light only !important;
+}
+html, body {
+    color-scheme: light !important;
+    background: #f0f2f5 !important;
+    color: #1c1e21 !important;
+}
+
+/* ── Hide sidebar / footer / header ── */
 [data-testid="collapsedControl"] { display:none !important; }
 [data-testid="stSidebar"]        { display:none !important; }
 #MainMenu                        { display:none !important; }
@@ -29,235 +41,287 @@ footer                           { display:none !important; }
 header[data-testid="stHeader"]   { display:none !important; }
 
 /* ── Base ── */
-html, body, [data-testid="stAppViewContainer"] {
+[data-testid="stAppViewContainer"],
+[data-testid="stMainBlockContainer"],
+[data-testid="stMain"] {
     background: #f0f2f5 !important;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    color: #1c1e21 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     padding-top: 0 !important;
 }
-[data-testid="stMainBlockContainer"] {
-    padding-top: 0 !important;
-    max-width: 100% !important;
-}
-[data-testid="stMain"] { padding-top: 0 !important; }
+[data-testid="stMainBlockContainer"] { max-width: 100% !important; }
 
-/* ── Top Navbar ── */
+/* ── Force all text dark ── */
+p, span, div, label, h1, h2, h3, h4, li {
+    color: #1c1e21 !important;
+}
+
+/* ════════════════════════════════════════════
+   NAVBAR — compact, wraps on mobile
+   ════════════════════════════════════════════ */
 .app-navbar {
-    position: sticky;
-    top: 0;
-    z-index: 999;
-    background: #ffffff;
+    position: sticky; top: 0; z-index: 999;
+    background: #fff !important;
     border-bottom: 1px solid #e4e6eb;
-    box-shadow: 0 1px 6px rgba(0,0,0,.07);
-    padding: 0 20px;
-    display: flex;
-    align-items: center;
-    height: 52px;
-    gap: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    padding: 0 12px;
+    display: flex; flex-wrap: wrap;
+    align-items: center; min-height: 50px; gap: 8px;
 }
-.app-navbar-icon {
-    font-size: 22px; flex-shrink: 0;
-}
+.app-navbar-icon { font-size: 20px; flex-shrink: 0; }
 .app-navbar-title {
-    font-weight: 800; font-size: 17px;
-    color: #1c1e21; white-space: nowrap; flex-shrink: 0;
-    letter-spacing: -0.3px;
+    font-weight: 800; font-size: 15px;
+    color: #1c1e21 !important; white-space: nowrap; flex-shrink: 0;
 }
+.app-navbar-sep { color: #ccc; font-size: 16px; flex-shrink: 0; }
 .app-navbar-trip {
-    background: #f0f2f5;
-    color: #444;
-    padding: 4px 12px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 13px;
-    white-space: nowrap;
-    border: 1px solid #e4e6eb;
-    max-width: 260px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    background: #f0f2f5 !important; color: #333 !important;
+    padding: 3px 10px; border-radius: 8px;
+    font-weight: 600; font-size: 12px;
+    border: 1px solid #ddd;
+    max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex-shrink: 1;
 }
-.app-navbar-spacer { flex: 1; }
+.app-navbar-spacer { flex: 1; min-width: 4px; }
 .app-navbar-avatar {
-    width: 34px; height: 34px; border-radius: 50%;
-    background: linear-gradient(135deg, #4f8ef7, #1877f2);
-    color: #fff;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #1877f2 !important; color: #fff !important;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 14px; flex-shrink: 0;
-    box-shadow: 0 1px 4px rgba(24,119,242,.3);
-}
-.app-online-badge {
-    background: #e6f4ea; color: #2d7d46;
-    padding: 3px 10px; border-radius: 20px;
-    font-size: 12px; font-weight: 600; white-space: nowrap;
-    border: 1px solid #b7dfc3;
-}
-.app-notif-badge {
-    background: #fff0f0; color: #d93025;
-    padding: 3px 10px; border-radius: 20px;
-    font-size: 12px; font-weight: 700; white-space: nowrap;
-    border: 1px solid #f5c6c6;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
 }
 .app-user-name {
-    font-size: 13px; font-weight: 600; color: #1c1e21;
-    white-space: nowrap; max-width: 100px;
-    overflow: hidden; text-overflow: ellipsis;
+    font-size: 12px; font-weight: 600; color: #1c1e21 !important;
+    white-space: nowrap; max-width: 80px;
+    overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;
+}
+.app-online-badge {
+    background: #e6f4ea !important; color: #1e7e34 !important;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+    border: 1px solid #a8d5b5 !important; flex-shrink: 0;
+}
+.app-notif-badge {
+    background: #ffe0e0 !important; color: #c0392b !important;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+    border: 1px solid #f5b7b7 !important; flex-shrink: 0;
 }
 
-/* ── Cards ── */
-.app-card {
-    background: #fff;
-    border: 1px solid #e4e6eb;
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,.05);
-    padding: 20px 24px;
-    margin-bottom: 16px;
-}
-
-/* ── Section heading ── */
-.section-title {
-    font-size: 18px; font-weight: 700; color: #1c1e21;
-    margin: 0 0 14px 0; padding-bottom: 10px;
-    border-bottom: 2px solid #e4e6eb;
-}
-
-/* ── Tabs ── */
-[data-testid="stTabs"] [role="tablist"] {
-    border-bottom: 1px solid #dadde1 !important;
-    background: #fff !important; border-radius: 8px 8px 0 0 !important;
-    padding: 0 8px !important;
-}
-[data-testid="stTabs"] [role="tab"] {
-    color: #65676b !important; font-weight: 600 !important;
-    font-size: 15px !important; padding: 12px 16px !important;
-    border-bottom: 3px solid transparent !important; border-radius: 0 !important;
-}
-[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: #1877f2 !important; border-bottom: 3px solid #1877f2 !important;
-}
-
-/* ── Buttons ── */
+/* ════════════════════════════════════════════
+   MENU BUTTONS — icon only on mobile
+   ════════════════════════════════════════════ */
 .stButton > button {
     border-radius: 8px !important;
-    font-weight: 600 !important;
-    font-size: 13.5px !important;
-    padding: 6px 14px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 8px 6px !important;
     transition: all .15s !important;
+    width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    color: #1c1e21 !important;
 }
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #4f8ef7, #1877f2) !important;
-    border: none !important; color: #fff !important;
-    box-shadow: 0 1px 4px rgba(24,119,242,.3) !important;
+    background: #1877f2 !important;
+    border: none !important;
+    color: #fff !important;
 }
 .stButton > button[kind="primary"]:hover {
-    background: linear-gradient(135deg, #3a7de0, #1464d8) !important;
-    box-shadow: 0 2px 8px rgba(24,119,242,.4) !important;
-    transform: translateY(-1px) !important;
+    background: #1464d8 !important;
 }
 .stButton > button[kind="secondary"] {
-    background: #f0f2f5 !important; border: 1px solid #e4e6eb !important;
-    color: #444 !important;
+    background: #fff !important;
+    border: 1.5px solid #e4e6eb !important;
+    color: #333 !important;
 }
 .stButton > button[kind="secondary"]:hover {
-    background: #e4e6eb !important; color: #1c1e21 !important;
+    background: #f0f2f5 !important;
+    color: #1c1e21 !important;
 }
 
-/* ── Inputs ── */
+/* ════════════════════════════════════════════
+   INPUTS — force light background + dark text
+   ════════════════════════════════════════════ */
 [data-testid="stTextInput"] input,
 [data-testid="stNumberInput"] input,
-[data-testid="stTextArea"] textarea {
+[data-testid="stTextArea"] textarea,
+[data-testid="stSelectbox"] select,
+[data-testid="stSelectbox"] > div > div {
     border-radius: 10px !important;
-    border: 1.5px solid #e4e6eb !important;
-    background: #f7f8fa !important;
+    border: 1.5px solid #d1d5db !important;
+    background: #fff !important;
+    color: #1c1e21 !important;
     font-size: 14px !important;
-    padding: 8px 14px !important;
-    transition: border-color .15s, box-shadow .15s !important;
+    padding: 8px 12px !important;
 }
 [data-testid="stTextInput"] input:focus,
 [data-testid="stNumberInput"] input:focus,
 [data-testid="stTextArea"] textarea:focus {
-    border-color: #1877f2 !important; background: #fff !important;
+    border-color: #1877f2 !important;
     box-shadow: 0 0 0 3px rgba(24,119,242,.12) !important;
+    background: #fff !important;
+}
+/* Label text */
+[data-testid="stTextInput"] label,
+[data-testid="stNumberInput"] label,
+[data-testid="stTextArea"] label,
+[data-testid="stSelectbox"] label,
+[data-testid="stFileUploader"] label,
+[data-testid="stCheckbox"] label,
+[data-testid="stRadio"] label {
+    color: #1c1e21 !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
 }
 
-/* ── Expanders ── */
+/* ════════════════════════════════════════════
+   TABS
+   ════════════════════════════════════════════ */
+[data-testid="stTabs"] [role="tablist"] {
+    border-bottom: 2px solid #e4e6eb !important;
+    background: #fff !important;
+    border-radius: 10px 10px 0 0 !important;
+    padding: 0 4px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+}
+[data-testid="stTabs"] [role="tab"] {
+    color: #555 !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    padding: 10px 12px !important;
+    border-bottom: 3px solid transparent !important;
+    border-radius: 0 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    color: #1877f2 !important;
+    border-bottom-color: #1877f2 !important;
+}
+
+/* ════════════════════════════════════════════
+   EXPANDERS
+   ════════════════════════════════════════════ */
 [data-testid="stExpander"] {
     background: #fff !important;
     border: 1.5px solid #e4e6eb !important;
     border-radius: 10px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,.04) !important;
     margin-bottom: 10px !important;
 }
 [data-testid="stExpander"] summary {
-    font-weight: 600 !important; font-size: 14px !important; padding: 12px 16px !important;
+    font-weight: 600 !important; font-size: 14px !important;
+    color: #1c1e21 !important; padding: 12px 14px !important;
+}
+[data-testid="stExpander"] summary span { color: #1c1e21 !important; }
+
+/* ════════════════════════════════════════════
+   ALERTS
+   ════════════════════════════════════════════ */
+[data-testid="stAlert"] {
+    border-radius: 10px !important;
+    color: #1c1e21 !important;
+}
+[data-testid="stAlert"] p { color: inherit !important; }
+
+/* ════════════════════════════════════════════
+   CARDS (inline HTML)
+   ════════════════════════════════════════════ */
+.app-card {
+    background: #fff !important; color: #1c1e21 !important;
+    border: 1.5px solid #e4e6eb; border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    padding: 16px; margin-bottom: 14px;
 }
 
-/* ── Messenger bubbles ── */
+/* ════════════════════════════════════════════
+   MESSENGER BUBBLES
+   ════════════════════════════════════════════ */
 .fb-bubble-out {
-    align-self: flex-end; background: linear-gradient(135deg,#4f8ef7,#0084ff); color: #fff;
-    padding: 9px 15px; border-radius: 18px 18px 4px 18px;
-    max-width: 72%; font-size: 14px; line-height: 1.5;
-    margin-left: auto; word-break: break-word;
-    box-shadow: 0 1px 3px rgba(0,132,255,.2);
+    align-self: flex-end;
+    background: #1877f2 !important; color: #fff !important;
+    padding: 9px 14px; border-radius: 18px 18px 4px 18px;
+    max-width: 78%; font-size: 14px; line-height: 1.5;
+    word-break: break-word;
 }
 .fb-bubble-in {
-    align-self: flex-start; background: #f0f2f5; color: #1c1e21;
-    padding: 9px 15px; border-radius: 18px 18px 18px 4px;
-    max-width: 72%; font-size: 14px; line-height: 1.5; word-break: break-word;
-    border: 1px solid #e4e6eb;
+    align-self: flex-start;
+    background: #f0f2f5 !important; color: #1c1e21 !important;
+    padding: 9px 14px; border-radius: 18px 18px 18px 4px;
+    max-width: 78%; font-size: 14px; line-height: 1.5;
+    word-break: break-word; border: 1px solid #e4e6eb;
 }
 .fb-bubble-sys {
-    align-self: center; background: #f0f7ff; color: #1877f2;
-    padding: 8px 14px; border-radius: 10px; max-width: 92%;
-    font-size: 13px; border-left: 3px solid #1877f2; line-height: 1.5;
-    word-break: break-word; margin: 4px auto;
+    background: #e8f0fe !important; color: #1877f2 !important;
+    padding: 8px 14px; border-radius: 10px;
+    font-size: 13px; border-left: 3px solid #1877f2;
+    line-height: 1.5; word-break: break-word; margin: 4px 0;
+    width: 100%;
 }
-.fb-bubble-time { font-size: 11px; color: #b0b3b8; margin-top: 3px; text-align: right; }
+.fb-bubble-time {
+    font-size: 11px; color: #999 !important;
+    margin-top: 3px; text-align: right;
+}
 .fb-bubble-time.left { text-align: left; }
-.fb-sender-name { font-size: 11px; color: #8a8d91; font-weight: 600; margin-bottom: 2px; margin-left: 4px; }
+.fb-sender-name {
+    font-size: 11px; color: #666 !important;
+    font-weight: 600; margin-bottom: 2px; margin-left: 4px;
+}
 .fb-chat-body {
-    background: #fafbfc; min-height: 200px; max-height: 420px; overflow-y: auto;
-    padding: 16px; display: flex; flex-direction: column; gap: 6px;
+    background: #fafbfc !important;
+    min-height: 180px; max-height: 380px; overflow-y: auto;
+    padding: 12px; display: flex; flex-direction: column; gap: 6px;
     border: 1.5px solid #e4e6eb; border-radius: 10px; margin-bottom: 10px;
 }
 .fb-badge {
-    display: inline-block; background: #fa3e3e; color: #fff;
+    display: inline-block; background: #e53935 !important; color: #fff !important;
     border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700;
-    margin-left: 5px; vertical-align: middle;
+    margin-left: 4px; vertical-align: middle;
 }
 
-/* ── Alert ── */
-[data-testid="stAlert"] { border-radius: 10px !important; font-size: 14px !important; }
-
-/* ── Selectbox ── */
-[data-testid="stSelectbox"] > div > div {
-    border-radius: 10px !important; border: 1.5px solid #e4e6eb !important;
-    background: #f7f8fa !important; font-size: 14px !important;
+/* ════════════════════════════════════════════
+   LAYOUT
+   ════════════════════════════════════════════ */
+.block-container {
+    padding-top: 0 !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 100% !important;
 }
 
-/* ── Tabs ── */
-[data-testid="stTabs"] [role="tablist"] {
-    border-bottom: 2px solid #e4e6eb !important;
-    background: #fff !important; border-radius: 10px 10px 0 0 !important;
-    padding: 0 12px !important; gap: 4px !important;
+/* Mobile: reduce padding */
+@media (max-width: 640px) {
+    .block-container {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    .app-navbar { padding: 0 8px; gap: 6px; }
+    .app-navbar-title { font-size: 13px; }
+    .app-navbar-trip { max-width: 90px; font-size: 11px; }
+    .app-online-badge { display: none; }
+    [data-testid="stTabs"] [role="tab"] {
+        font-size: 12px !important; padding: 8px 8px !important;
+    }
 }
-[data-testid="stTabs"] [role="tab"] {
-    color: #65676b !important; font-weight: 600 !important;
-    font-size: 14px !important; padding: 11px 18px !important;
-    border-bottom: 3px solid transparent !important; border-radius: 0 !important;
-    transition: color .15s !important;
-}
-[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: #1877f2 !important; border-bottom: 3px solid #1877f2 !important;
-}
-[data-testid="stTabs"] [role="tab"]:hover { color: #1877f2 !important; }
-
-/* ── Remove top gap ── */
-.block-container { padding-top: 0 !important; padding-left: 2rem !important; padding-right: 2rem !important; }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f0f2f5; border-radius: 3px; }
-::-webkit-scrollbar-thumb { background: #c4c6ca; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #8a8d91; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+/* ── Checkboxes & radio ── */
+[data-testid="stCheckbox"] span,
+[data-testid="stRadio"] span { color: #1c1e21 !important; }
+
+/* ── Markdown text ── */
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] span,
+[data-testid="stMarkdownContainer"] li { color: #1c1e21 !important; }
+
+/* ── Caption text ── */
+[data-testid="stCaptionContainer"] p { color: #666 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -387,18 +451,18 @@ if me and trip_id:
 # ─────────────────────────────────────────────
 # 5. TOP NAVBAR  (pure HTML — always visible)
 # ─────────────────────────────────────────────
-trip_label    = f"✈️  {current_trip}" if current_trip else "ยังไม่เลือก Event"
-user_avatar   = f'<div class="app-navbar-avatar">{me[0].upper()}</div>' if me else '<div class="app-navbar-avatar" style="background:#b0b3b8;">?</div>'
-online_html   = f'<span class="app-online-badge">🟢 {len(online_users)} ออนไลน์</span>' if online_users else ""
+trip_label    = current_trip if current_trip else "เลือก Event"
+user_avatar   = f'<div class="app-navbar-avatar">{me[0].upper()}</div>' if me else '<div class="app-navbar-avatar" style="background:#999;">?</div>'
+online_html   = f'<span class="app-online-badge">🟢 {len(online_users)}</span>' if online_users else ""
 notif_html    = f'<span class="app-notif-badge">🔔 {notif_count}</span>' if notif_count > 0 else ""
-user_name_html= f'<span class="app-user-name">{me}</span>' if me else '<span class="app-user-name" style="color:#8a8d91;">ยังไม่ล็อกอิน</span>'
+user_name_html= f'<span class="app-user-name">{me}</span>' if me else '<span class="app-user-name" style="color:#888;">ล็อกอิน</span>'
 
 st.markdown(f"""
 <div class="app-navbar">
   <span class="app-navbar-icon">✈️</span>
-  <span class="app-navbar-title">Trip Expense Splitter</span>
-  <span style="color:#e4e6eb;font-size:18px;flex-shrink:0;">│</span>
-  <span class="app-navbar-trip">{trip_label}</span>
+  <span class="app-navbar-title">Trip Splitter</span>
+  <span class="app-navbar-sep">│</span>
+  <span class="app-navbar-trip">✈️ {trip_label}</span>
   <span class="app-navbar-spacer"></span>
   {online_html}
   {notif_html}
@@ -411,11 +475,11 @@ st.markdown(f"""
 # 6. MENU BAR
 # ─────────────────────────────────────────────
 menu_items = [
-    ("🏠", "หน้าหลัก",  "home"),
-    ("🗓️", "Events",    "events"),
-    ("👥", "สมาชิก",    "members"),
-    ("💬", "แชท",       "chat"),
-    ("👤", "บัญชีฉัน",  "account"),
+    ("🏠", "หลัก",    "home"),
+    ("🗓️", "Events",  "events"),
+    ("👥", "สมาชิก",  "members"),
+    ("💬", "แชท",     "chat"),
+    ("👤", "บัญชี",   "account"),
 ]
 
 # Thin separator line below navbar
@@ -450,15 +514,15 @@ if active_menu == "home":
     else:
         has_date = current_trip_date and str(current_trip_date).strip()
         st.markdown(f"""
-        <div class="app-card" style="display:flex;align-items:center;gap:16px;padding:18px 22px;">
-          <div style="width:52px;height:52px;border-radius:14px;
-                      background:linear-gradient(135deg,#4f8ef7,#1877f2);
+        <div class="app-card" style="display:flex;align-items:center;gap:14px;padding:14px 16px;">
+          <div style="width:48px;height:48px;border-radius:12px;background:#1877f2;
                       display:flex;align-items:center;justify-content:center;
-                      font-size:26px;flex-shrink:0;box-shadow:0 2px 8px rgba(24,119,242,.25);">✈️</div>
-          <div style="flex:1;">
-            <div style="font-weight:800;font-size:20px;color:#1c1e21;line-height:1.2;">{current_trip}</div>
-            <div style="color:#65676b;font-size:13px;margin-top:3px;">
-              {'📅 ' + str(current_trip_date) if has_date else ''}{' &nbsp;·&nbsp; ' if has_date else ''}👥 {len(existing_members)} สมาชิก
+                      font-size:24px;flex-shrink:0;">✈️</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:18px;color:#1c1e21;line-height:1.2;
+                        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{current_trip}</div>
+            <div style="color:#555;font-size:13px;margin-top:3px;">
+              {'📅 ' + str(current_trip_date) if has_date else ''}{'  ·  ' if has_date else ''}👥 {len(existing_members)} สมาชิก
             </div>
           </div>
         </div>""", unsafe_allow_html=True)
@@ -583,14 +647,13 @@ if active_menu == "home":
                     icon  = "🟢" if b>0.01 else ("🔴" if b<-0.01 else "⚖️")
                     label = "รับคืน" if b>0.01 else ("ต้องจ่าย" if b<-0.01 else "เท่ากัน")
                     with cols_net[i%4]:
-                        st.markdown(f"""<div style="background:#fff;border-radius:12px;padding:16px 14px;
+                        st.markdown(f"""<div style="background:#fff;border-radius:12px;padding:14px 12px;
                                     border:1.5px solid #e4e6eb;text-align:center;
-                                    border-top:4px solid {color};margin-bottom:10px;
-                                    box-shadow:0 1px 4px rgba(0,0,0,.05);">
-                          <div style="font-size:22px;margin-bottom:4px;">{icon}</div>
+                                    border-top:4px solid {color};margin-bottom:10px;">
+                          <div style="font-size:20px;margin-bottom:4px;">{icon}</div>
                           <div style="font-weight:700;font-size:14px;color:#1c1e21;margin-bottom:2px;">{m}</div>
-                          <div style="font-size:11px;color:#8a8d91;margin-bottom:6px;">{label}</div>
-                          <div style="font-weight:800;font-size:18px;color:{color};">{abs(b):,.2f} ฿</div>
+                          <div style="font-size:11px;color:#666;margin-bottom:6px;">{label}</div>
+                          <div style="font-weight:800;font-size:17px;color:{color};">{abs(b):,.2f} ฿</div>
                         </div>""", unsafe_allow_html=True)
 
                 st.markdown("### 🚀 แผนการโอนเงิน")
@@ -606,12 +669,12 @@ if active_menu == "home":
                     border = "border:2px solid #1877f2;" if is_me_tx else "border:1.5px solid #e4e6eb;"
                     bg     = "background:#f0f7ff;" if is_me_tx else "background:#fff;"
                     badge  = '<span style="background:#1877f2;color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;">⚠️ คุณ</span>' if is_me_tx else ""
-                    st.markdown(f"""<div style="{bg}{border}border-radius:12px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);">
-                      <div style="font-size:15px;font-weight:700;color:#1c1e21;margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
-                        💳 <b>{d_n}</b> {badge}
-                        <span style="color:#8a8d91;font-size:18px;">→</span>
-                        👉 <b>{c_n}</b>
-                        <span style="background:#d93025;color:#fff;padding:3px 14px;border-radius:20px;font-size:14px;font-weight:700;margin-left:auto;">{amt_t:,.2f} ฿</span>
+                    st.markdown(f"""<div style="{bg}{border}border-radius:12px;padding:14px 16px;margin-bottom:12px;">
+                      <div style="font-size:14px;font-weight:700;color:#1c1e21;margin-bottom:8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+                        💳 <span style="color:#1c1e21;">{d_n}</span> {badge}
+                        <span style="color:#999;">→</span>
+                        👉 <span style="color:#1c1e21;">{c_n}</span>
+                        <span style="background:#c0392b;color:#fff;padding:2px 12px;border-radius:20px;font-size:13px;font-weight:700;margin-left:auto;">{amt_t:,.2f} ฿</span>
                       </div></div>""", unsafe_allow_html=True)
                     if pp or b_acc:
                         pay_c = st.columns(2)
@@ -755,13 +818,13 @@ elif active_menu == "members":
                     you_tag = " <i>(คุณ)</i>" if member == me else ""
                     mc1, mc2 = st.columns([5,1])
                     mc1.markdown(f"""<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f2f5;">
-                      <div style="width:38px;height:38px;border-radius:50%;
-                                  background:linear-gradient(135deg,#4f8ef7,#1877f2);
+                      <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
+                                  background:#1877f2;
                                   display:flex;align-items:center;justify-content:center;
-                                  color:#fff;font-weight:700;font-size:15px;flex-shrink:0;">{member[0].upper()}</div>
+                                  color:#fff;font-weight:700;font-size:14px;">{member[0].upper()}</div>
                       <div>
                         <div style="font-weight:600;font-size:14px;color:#1c1e21;">{dot} {member}{you_tag}{badge_html}</div>
-                        <div style="font-size:12px;color:#8a8d91;">{'🟢 ออนไลน์' if is_on else '⚪ ออฟไลน์'}</div>
+                        <div style="font-size:12px;color:#666;">{'🟢 ออนไลน์' if is_on else '⚪ ออฟไลน์'}</div>
                       </div>
                     </div>""", unsafe_allow_html=True)
                     if mc2.button("ออก", key=f"rm_{member}"):
@@ -885,22 +948,21 @@ elif active_menu == "chat":
                 init_p = partner[0].upper()
                 is_on_p = partner in online_users
                 st.markdown(f"""
-                <div style="background:#fff;border:1.5px solid #e4e6eb;border-radius:12px 12px 0 0;
-                            padding:14px 18px;display:flex;align-items:center;gap:12px;
-                            box-shadow:0 1px 3px rgba(0,0,0,.04);">
-                  <div style="width:42px;height:42px;border-radius:50%;
-                              background:linear-gradient(135deg,#4f8ef7,#1877f2);
+                <div style="background:#fff;border:1.5px solid #e4e6eb;border-radius:10px 10px 0 0;
+                            padding:12px 14px;display:flex;align-items:center;gap:10px;">
+                  <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;
+                              background:#1877f2;
                               display:flex;align-items:center;justify-content:center;
-                              color:#fff;font-weight:700;font-size:16px;
-                              box-shadow:0 2px 6px rgba(24,119,242,.25);">{init_p}</div>
-                  <div style="flex:1;">
-                    <div style="font-weight:700;font-size:16px;color:#1c1e21;">{partner}</div>
-                    <div style="font-size:12px;color:{'#2d7d46' if is_on_p else '#8a8d91'};font-weight:500;">
-                      {'🟢 ออนไลน์อยู่' if is_on_p else '⚪ ออฟไลน์'}
+                              color:#fff;font-weight:700;font-size:15px;">{init_p}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;font-size:15px;color:#1c1e21;
+                                overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{partner}</div>
+                    <div style="font-size:12px;color:{'#1e7e34' if is_on_p else '#888'};">
+                      {'🟢 ออนไลน์' if is_on_p else '⚪ ออฟไลน์'}
                     </div>
                   </div>
-                  <div style="display:flex;gap:16px;font-size:19px;color:#1877f2;opacity:.8;">
-                    <span title="โทร">📞</span><span title="วิดีโอ">📹</span>
+                  <div style="display:flex;gap:12px;font-size:18px;flex-shrink:0;">
+                    <span>📞</span><span>📹</span>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -992,17 +1054,15 @@ elif active_menu == "account":
                     else: st.error("⚠️ กรอกชื่อก่อน")
         else:
             st.markdown(f"""
-            <div style="display:flex;align-items:center;gap:16px;background:#fff;
-                        border-radius:14px;padding:22px;border:1.5px solid #e4e6eb;
-                        margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.05);">
-              <div style="width:68px;height:68px;border-radius:50%;
-                          background:linear-gradient(135deg,#4f8ef7,#1877f2);
+            <div style="display:flex;align-items:center;gap:14px;background:#fff;
+                        border-radius:12px;padding:18px;border:1.5px solid #e4e6eb;
+                        margin-bottom:16px;">
+              <div style="width:60px;height:60px;border-radius:50%;background:#1877f2;flex-shrink:0;
                           display:flex;align-items:center;justify-content:center;
-                          color:#fff;font-weight:800;font-size:28px;
-                          box-shadow:0 3px 10px rgba(24,119,242,.3);">{me[0].upper()}</div>
+                          color:#fff;font-weight:800;font-size:26px;">{me[0].upper()}</div>
               <div>
-                <div style="font-weight:800;font-size:20px;color:#1c1e21;">{me}</div>
-                <div style="font-size:13px;color:#2d7d46;font-weight:600;margin-top:3px;">🟢 ออนไลน์อยู่</div>
+                <div style="font-weight:800;font-size:18px;color:#1c1e21;">{me}</div>
+                <div style="font-size:13px;color:#1e7e34;font-weight:600;margin-top:3px;">🟢 ออนไลน์อยู่</div>
               </div>
             </div>
             """, unsafe_allow_html=True)
@@ -1038,16 +1098,16 @@ elif active_menu == "account":
             for u in existing_all_users:
                 is_on = u in online_users
                 dot = "🟢" if is_on else "⚪"
-                you = " *(คุณ)*" if u == me else ""
+                you = " (คุณ)" if u == me else ""
                 st.markdown(f"""
                 <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f2f5;">
-                  <div style="width:36px;height:36px;border-radius:50%;
-                              background:{'linear-gradient(135deg,#4f8ef7,#1877f2)' if is_on else '#e4e6eb'};
+                  <div style="width:34px;height:34px;border-radius:50%;flex-shrink:0;
+                              background:{'#1877f2' if is_on else '#ccc'};
                               display:flex;align-items:center;justify-content:center;
-                              color:{'#fff' if is_on else '#8a8d91'};font-weight:700;font-size:14px;">{u[0].upper()}</div>
+                              color:#fff;font-weight:700;font-size:13px;">{u[0].upper()}</div>
                   <div>
                     <div style="font-weight:600;font-size:14px;color:#1c1e21;">{u}{you}</div>
-                    <div style="font-size:12px;color:#8a8d91;">{dot} {'ออนไลน์' if is_on else 'ออฟไลน์'}</div>
+                    <div style="font-size:12px;color:#666;">{dot} {'ออนไลน์' if is_on else 'ออฟไลน์'}</div>
                   </div>
                 </div>""", unsafe_allow_html=True)
         else:
