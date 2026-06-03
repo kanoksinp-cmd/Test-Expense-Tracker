@@ -21,282 +21,221 @@ st_autorefresh(interval=1000, limit=None, key="live_refresh")
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* ── FORCE LIGHT MODE ── */
+/* ══ LIGHT MODE FORCE ══ */
 :root { color-scheme: light only !important; }
-html, body { color-scheme: light !important; }
+html, body { color-scheme: light !important; background: #dbeafe !important; }
 
-/* ── HIDE STREAMLIT CHROME ── */
-[data-testid="collapsedControl"],
-[data-testid="stSidebar"],
-#MainMenu, footer,
-header[data-testid="stHeader"] { display:none !important; }
+/* ══ HIDE STREAMLIT CHROME ══ */
+[data-testid="collapsedControl"],[data-testid="stSidebar"],
+#MainMenu,footer,header[data-testid="stHeader"] { display:none !important; }
 
-/* ── BASE ── */
-html, body,
+/* ══ GLOBAL FONT & BG ══ */
+html,body,
 [data-testid="stAppViewContainer"],
 [data-testid="stMainBlockContainer"],
 [data-testid="stMain"] {
-    background: #dbeafe !important;   /* blue-100 */
-    color: #000 !important;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    background: #dbeafe !important;
+    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif !important;
     padding-top: 0 !important;
 }
 [data-testid="stMainBlockContainer"] { max-width: 100% !important; }
 
-/* ── KILL dark-mode text ── */
-*, *::before, *::after { color: #000 !important; }
-button, button * { color: inherit !important; }
+/* ══ FIXED HEADER SHELL (navbar + menubar injected by JS into this) ══ */
+#fixed-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 9999;
+    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
 
-/* ═══════════════════════════════════════
-   TOP NAVBAR  — position:sticky so it stays
-   ═══════════════════════════════════════ */
-.top-bar {
-    position: sticky;
-    top: 0; z-index: 1000;
-    background: #1d4ed8;          /* blue-700 */
-    color: #fff !important;
-    padding: 0 14px;
+/* ── Navbar ── */
+#fixed-header .navbar {
+    background: #1d4ed8;
     display: flex; align-items: center;
-    height: 52px; gap: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    height: 50px; padding: 0 12px; gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
-.top-bar * { color: #fff !important; }
-.top-bar-icon { font-size: 20px; flex-shrink:0; }
-.top-bar-title {
-    font-weight: 800; font-size: 15px;
-    white-space: nowrap; flex-shrink: 0;
+#fixed-header .navbar * { color: #fff !important; }
+#fixed-header .nb-icon  { font-size: 20px; flex-shrink:0; }
+#fixed-header .nb-title { font-weight:800; font-size:15px; white-space:nowrap; flex-shrink:0; }
+#fixed-header .nb-trip  {
+    background: rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35);
+    border-radius:20px; padding:2px 10px; font-size:12px; font-weight:600;
+    max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
 }
-.top-bar-trip {
-    background: rgba(255,255,255,.18);
-    padding: 3px 10px; border-radius: 20px;
-    font-size: 12px; font-weight: 600;
-    max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    flex-shrink: 1; border: 1px solid rgba(255,255,255,.3);
+#fixed-header .nb-spacer { flex:1; }
+#fixed-header .nb-badge-g {
+    background:#16a34a; border-radius:20px;
+    padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
 }
-.top-bar-spacer { flex:1; }
-.top-bar-badge-green {
-    background: #16a34a; color:#fff !important;
-    padding: 2px 9px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink:0;
+#fixed-header .nb-badge-r {
+    background:#dc2626; border-radius:20px;
+    padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
 }
-.top-bar-badge-red {
-    background: #dc2626; color:#fff !important;
-    padding: 2px 9px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink:0;
+#fixed-header .nb-avatar {
+    width:28px; height:28px; border-radius:50%;
+    background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.5);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:13px; flex-shrink:0;
 }
-.top-bar-avatar {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: rgba(255,255,255,.25);
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 13px; flex-shrink:0;
-    border: 2px solid rgba(255,255,255,.5);
-}
-.top-bar-name {
-    font-size: 12px; font-weight: 600;
-    white-space: nowrap; max-width: 70px;
-    overflow: hidden; text-overflow: ellipsis; flex-shrink:1;
+#fixed-header .nb-name {
+    font-size:12px; font-weight:600;
+    max-width:65px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
 }
 
-/* ═══════════════════════════════════════
-   MENU TABS  — 4 items, full-width row
-   ═══════════════════════════════════════ */
-.menu-row {
-    background: #1e40af;           /* blue-800 */
-    display: flex; gap: 0;
+/* ── Menubar ── */
+#fixed-header .menubar {
+    background: #1e3a8a;
+    display: flex; height: 44px;
     border-bottom: 3px solid #1d4ed8;
 }
+#fixed-header .menubar .mb-item {
+    flex: 1; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; cursor:pointer;
+    color: #93c5fd !important; border:none; background:transparent;
+    border-bottom: 3px solid transparent; margin-bottom:-3px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    padding:0 4px; transition: background .15s, color .15s;
+    text-decoration:none;
+}
+#fixed-header .menubar .mb-item:hover  { background:rgba(255,255,255,.1); color:#fff !important; }
+#fixed-header .menubar .mb-item.active { color:#fff !important; border-bottom:3px solid #60a5fa; background:rgba(255,255,255,.08); }
 
-/* Streamlit button resets for nav */
-[data-testid="stHorizontalBlock"] { gap: 0 !important; }
-
-.stButton > button {
-    border-radius: 0 !important;
-    font-weight: 700 !important;
-    font-size: 13px !important;
-    padding: 10px 4px !important;
-    width: 100% !important;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    border: none !important;
-    transition: background .15s !important;
-}
-.stButton > button[kind="secondary"] {
-    background: #1e40af !important;
-    color: #bfdbfe !important;
-    border-bottom: 3px solid transparent !important;
-}
-.stButton > button[kind="secondary"] * { color: #bfdbfe !important; }
-.stButton > button[kind="secondary"]:hover {
-    background: #1d4ed8 !important;
-    color: #fff !important;
-}
-.stButton > button[kind="secondary"]:hover * { color: #fff !important; }
-.stButton > button[kind="primary"] {
-    background: #1d4ed8 !important;
-    color: #fff !important;
-    border-bottom: 3px solid #60a5fa !important;
-}
-.stButton > button[kind="primary"] * { color: #fff !important; }
-
-/* ── Divider below menu ── */
-.menu-divider {
-    height: 4px; background: #dbeafe; margin: 0;
-}
-
-/* ═══════════════════════════════════════
-   CONTENT PADDING
-   ═══════════════════════════════════════ */
+/* ══ PUSH CONTENT DOWN so fixed header doesn't cover it ══ */
 .block-container {
-    padding-top: 0 !important;
+    padding-top: 100px !important;   /* navbar(50) + menubar(44) + gap */
     padding-left: 1rem !important;
     padding-right: 1rem !important;
     padding-bottom: 2rem !important;
     max-width: 100% !important;
 }
-@media (max-width: 600px) {
-    .block-container { padding-left: .5rem !important; padding-right: .5rem !important; }
-    .top-bar-title { display: none; }
-    .top-bar-trip { max-width: 110px; }
+@media (max-width:600px) {
+    .block-container { padding-left:.5rem !important; padding-right:.5rem !important; }
+    #fixed-header .nb-title { display:none; }
+    #fixed-header .nb-trip  { max-width:100px; }
 }
 
-/* ═══════════════════════════════════════
-   CARDS
-   ═══════════════════════════════════════ */
-.card {
-    background: #fff;
-    border: 1.5px solid #bfdbfe;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 14px;
-    color: #000;
+/* ══ STREAMLIT BUTTON (non-nav) ══ */
+.stButton > button {
+    border-radius: 8px !important; font-weight:700 !important;
+    font-size:13px !important; padding:8px 12px !important;
+    border: 1.5px solid #93c5fd !important;
+    transition: all .15s !important;
 }
-.card * { color: #000 !important; }
-.card-blue {
-    background: #eff6ff;
-    border: 1.5px solid #93c5fd;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 14px;
+.stButton > button[kind="primary"] {
+    background:#1d4ed8 !important; color:#fff !important; border-color:#1d4ed8 !important;
 }
-.card-blue * { color: #000 !important; }
-.section-head {
-    font-size: 15px; font-weight: 800; color: #000 !important;
-    padding: 12px 0 8px 0;
-    border-bottom: 2px solid #bfdbfe;
-    margin-bottom: 12px;
+.stButton > button[kind="primary"] * { color:#fff !important; }
+.stButton > button[kind="primary"]:hover { background:#1e40af !important; }
+.stButton > button[kind="secondary"] {
+    background:#eff6ff !important; color:#1e40af !important; border-color:#93c5fd !important;
 }
+.stButton > button[kind="secondary"] * { color:#1e40af !important; }
+.stButton > button[kind="secondary"]:hover { background:#dbeafe !important; }
 
-/* ═══════════════════════════════════════
-   STREAMLIT ELEMENTS — force colors
-   ═══════════════════════════════════════ */
-/* Inputs */
+/* ══ INPUTS ══ */
 [data-testid="stTextInput"] input,
 [data-testid="stNumberInput"] input,
 [data-testid="stTextArea"] textarea {
-    background: #fff !important; color: #000 !important;
-    border: 1.5px solid #93c5fd !important;
-    border-radius: 8px !important; font-size: 14px !important;
-    padding: 8px 12px !important;
+    background:#fff !important; color:#000 !important;
+    border:1.5px solid #93c5fd !important; border-radius:8px !important;
+    font-size:14px !important; padding:8px 12px !important;
 }
 [data-testid="stTextInput"] input:focus,
 [data-testid="stNumberInput"] input:focus,
 [data-testid="stTextArea"] textarea:focus {
-    border-color: #1d4ed8 !important;
-    box-shadow: 0 0 0 3px rgba(29,78,216,.15) !important;
-    background: #fff !important;
+    border-color:#1d4ed8 !important;
+    box-shadow:0 0 0 3px rgba(29,78,216,.12) !important; background:#fff !important;
 }
-/* Labels */
-[data-testid="stTextInput"] label,
-[data-testid="stNumberInput"] label,
-[data-testid="stTextArea"] label,
-[data-testid="stSelectbox"] label,
-[data-testid="stDateInput"] label,
-[data-testid="stFileUploader"] label,
-[data-testid="stCheckbox"] label p,
-[data-testid="stRadio"] label p { color: #000 !important; font-weight: 500 !important; }
-/* Selectbox */
+[data-testid="stTextInput"] label,[data-testid="stNumberInput"] label,
+[data-testid="stTextArea"] label,[data-testid="stSelectbox"] label,
+[data-testid="stDateInput"] label,[data-testid="stFileUploader"] label,
+[data-testid="stCheckbox"] label p,[data-testid="stRadio"] label p {
+    color:#000 !important; font-weight:500 !important; font-size:14px !important;
+}
 [data-testid="stSelectbox"] > div > div {
-    background: #fff !important; color: #000 !important;
-    border: 1.5px solid #93c5fd !important; border-radius: 8px !important;
+    background:#fff !important; color:#000 !important;
+    border:1.5px solid #93c5fd !important; border-radius:8px !important;
 }
-/* Tabs */
+
+/* ══ TABS (content area tabs, not nav) ══ */
 [data-testid="stTabs"] [role="tablist"] {
-    background: #eff6ff !important;
-    border-bottom: 2px solid #93c5fd !important;
-    border-radius: 8px 8px 0 0 !important;
-    padding: 0 4px !important; overflow-x: auto !important;
+    background:#eff6ff !important; border-bottom:2px solid #93c5fd !important;
+    border-radius:8px 8px 0 0 !important; padding:0 4px !important; overflow-x:auto !important;
 }
 [data-testid="stTabs"] [role="tab"] {
-    color: #1e40af !important; font-weight: 700 !important;
-    font-size: 13px !important; padding: 10px 12px !important;
-    border-bottom: 3px solid transparent !important;
-    white-space: nowrap !important;
+    color:#1e40af !important; font-weight:700 !important; font-size:13px !important;
+    padding:10px 14px !important; border-bottom:3px solid transparent !important; white-space:nowrap !important;
 }
 [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: #1d4ed8 !important; border-bottom-color: #1d4ed8 !important;
-    background: #fff !important;
+    color:#1d4ed8 !important; border-bottom-color:#1d4ed8 !important; background:#fff !important;
 }
-/* Expanders */
+
+/* ══ EXPANDERS ══ */
 [data-testid="stExpander"] {
-    background: #fff !important;
-    border: 1.5px solid #bfdbfe !important;
-    border-radius: 10px !important; margin-bottom: 10px !important;
+    background:#fff !important; border:1.5px solid #bfdbfe !important;
+    border-radius:10px !important; margin-bottom:10px !important;
 }
 [data-testid="stExpander"] summary,
-[data-testid="stExpander"] summary * { color: #000 !important; font-weight: 600 !important; }
-/* Alert */
-[data-testid="stAlert"] { border-radius: 10px !important; }
-[data-testid="stAlert"] p,
-[data-testid="stAlert"] span { color: #000 !important; }
-/* Caption */
-[data-testid="stCaptionContainer"] p { color: #374151 !important; }
-/* Markdown */
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stMarkdownContainer"] li,
-[data-testid="stMarkdownContainer"] span { color: #000 !important; }
+[data-testid="stExpander"] summary * { color:#000 !important; font-weight:600 !important; }
 
-/* ═══════════════════════════════════════
-   CHAT BUBBLES
-   ═══════════════════════════════════════ */
+/* ══ ALERTS ══ */
+[data-testid="stAlert"] { border-radius:10px !important; }
+[data-testid="stAlert"] p,[data-testid="stAlert"] span { color:#000 !important; }
+
+/* ══ TEXT ══ */
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li { color:#000 !important; }
+[data-testid="stCaptionContainer"] p { color:#374151 !important; }
+
+/* ══ CARDS ══ */
+.card {
+    background:#fff; border:1.5px solid #bfdbfe; border-radius:12px;
+    padding:16px; margin-bottom:14px;
+}
+.card * { color:#000 !important; }
+.section-head {
+    font-size:15px; font-weight:800; color:#000 !important;
+    padding:10px 0 8px; border-bottom:2px solid #bfdbfe; margin-bottom:12px;
+}
+
+/* ══ CHAT BUBBLES ══ */
 .fb-bubble-out {
-    align-self: flex-end;
-    background: #1d4ed8; color: #fff !important;
-    padding: 9px 14px; border-radius: 18px 18px 4px 18px;
-    max-width: 78%; font-size: 14px; line-height: 1.5; word-break: break-word;
+    align-self:flex-end; background:#1d4ed8; color:#fff !important;
+    padding:9px 14px; border-radius:18px 18px 4px 18px;
+    max-width:78%; font-size:14px; line-height:1.5; word-break:break-word;
 }
-.fb-bubble-out * { color: #fff !important; }
+.fb-bubble-out * { color:#fff !important; }
 .fb-bubble-in {
-    align-self: flex-start;
-    background: #eff6ff; color: #000 !important;
-    padding: 9px 14px; border-radius: 18px 18px 18px 4px;
-    max-width: 78%; font-size: 14px; line-height: 1.5; word-break: break-word;
-    border: 1px solid #bfdbfe;
+    align-self:flex-start; background:#eff6ff; color:#000 !important;
+    padding:9px 14px; border-radius:18px 18px 18px 4px;
+    max-width:78%; font-size:14px; line-height:1.5; word-break:break-word;
+    border:1px solid #bfdbfe;
 }
-.fb-bubble-in * { color: #000 !important; }
+.fb-bubble-in * { color:#000 !important; }
 .fb-bubble-sys {
-    background: #dbeafe; color: #1e40af !important;
-    padding: 8px 14px; border-radius: 10px;
-    font-size: 13px; border-left: 3px solid #1d4ed8;
-    line-height: 1.5; word-break: break-word; width: 100%;
+    background:#dbeafe; color:#1e40af !important;
+    padding:8px 14px; border-radius:10px; font-size:13px;
+    border-left:3px solid #1d4ed8; line-height:1.5; word-break:break-word; width:100%;
 }
-.fb-bubble-sys * { color: #1e40af !important; }
-.fb-bubble-time { font-size: 11px; color: #6b7280 !important; margin-top: 3px; }
-.fb-bubble-time.r { text-align: right; }
-.fb-sender-name { font-size: 11px; color: #374151 !important; font-weight: 600; margin-bottom: 2px; margin-left: 4px; }
+.fb-bubble-sys * { color:#1e40af !important; }
+.fb-bubble-time { font-size:11px; color:#6b7280 !important; margin-top:3px; }
+.fb-bubble-time.r { text-align:right; }
+.fb-sender-name { font-size:11px; color:#374151 !important; font-weight:600; margin-bottom:2px; margin-left:4px; }
 .fb-chat-body {
-    background: #f0f9ff;
-    min-height: 200px; max-height: 400px; overflow-y: auto;
-    padding: 14px; display: flex; flex-direction: column; gap: 8px;
-    border: 1.5px solid #bfdbfe; border-radius: 0 0 10px 10px; margin-bottom: 10px;
+    background:#f0f9ff; min-height:180px; max-height:380px; overflow-y:auto;
+    padding:14px; display:flex; flex-direction:column; gap:8px;
+    border:1.5px solid #bfdbfe; border-radius:0 0 10px 10px; margin-bottom:10px;
 }
 .fb-badge {
-    display: inline-block; background: #dc2626; color: #fff !important;
-    border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; margin-left: 4px;
+    display:inline-block; background:#dc2626; color:#fff !important;
+    border-radius:10px; padding:1px 7px; font-size:11px; font-weight:700; margin-left:4px;
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: #dbeafe; }
-::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 4px; }
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:#dbeafe; }
+::-webkit-scrollbar-thumb { background:#93c5fd; border-radius:4px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -394,47 +333,173 @@ if me and trip_id:
     c = db(); r = c.execute("SELECT COUNT(*) as n FROM notifications WHERE trip_id=? AND to_user=? AND is_read=0",(trip_id,me)).fetchone(); notif_count = r["n"] if r else 0; c.close()
 
 # ─────────────────────────────────────────────────────────────
-# TOP NAVBAR  (sticky HTML)
+# FIXED HEADER via JS injection (navbar + menubar)
 # ─────────────────────────────────────────────────────────────
 trip_lbl   = cur_trip or "เลือก Event"
-av_html    = f'<div class="top-bar-avatar">{me[0].upper()}</div>' if me else '<div class="top-bar-avatar">?</div>'
-name_html  = f'<span class="top-bar-name">{me}</span>' if me else '<span class="top-bar-name">ล็อกอิน</span>'
-green_html = f'<span class="top-bar-badge-green">🟢 {len(online_users)}</span>' if online_users else ""
-red_html   = f'<span class="top-bar-badge-red">🔔 {notif_count}</span>' if notif_count > 0 else ""
+av_char    = me[0].upper() if me else "?"
+name_str   = me if me else "ล็อกอิน"
+green_part = f'<span class="nb-badge-g">🟢 {len(online_users)}</span>' if online_users else ""
+red_part   = f'<span class="nb-badge-r">🔔 {notif_count}</span>' if notif_count > 0 else ""
 
-st.markdown(f"""
-<div class="top-bar">
-  <span class="top-bar-icon">✈️</span>
-  <span class="top-bar-title">Trip Splitter</span>
-  <span class="top-bar-trip">✈️ {trip_lbl}</span>
-  <span class="top-bar-spacer"></span>
-  {green_html}{red_html}{av_html}{name_html}
-</div>""", unsafe_allow_html=True)
-
-# ─────────────────────────────────────────────────────────────
-# MENU BAR  (4 tabs: หลัก | จัดการ | แชท | บัญชี)
-# ─────────────────────────────────────────────────────────────
+cur_menu = st.session_state["menu"]
 MENUS = [
     ("🏠","หลัก",   "home"),
-    ("🗓️","จัดการ", "manage"),   # Events + Members merged
+    ("🗓️","จัดการ", "manage"),
     ("💬","แชท",    "chat"),
     ("👤","บัญชี",  "account"),
 ]
 
+menu_items_html = ""
+for icon, label, key in MENUS:
+    badge = f" 🔴{notif_count}" if key == "chat" and notif_count > 0 else ""
+    active_cls = "active" if cur_menu == key else ""
+    menu_items_html += f'<div class="mb-item {active_cls}" onclick="setMenu(\'{key}\')">{icon} {label}{badge}</div>'
+
+st.markdown(f"""
+<div id="fixed-header">
+  <div class="navbar">
+    <span class="nb-icon">✈️</span>
+    <span class="nb-title">Trip Splitter</span>
+    <span class="nb-trip">✈️ {trip_lbl}</span>
+    <span class="nb-spacer"></span>
+    {green_part}{red_part}
+    <div class="nb-avatar">{av_char}</div>
+    <span class="nb-name">{name_str}</span>
+  </div>
+  <div class="menubar">{menu_items_html}</div>
+</div>
+
+<script>
+function setMenu(key) {{
+    // Find all Streamlit buttons with matching key pattern and click the right one
+    var btns = window.parent.document.querySelectorAll('button[data-testid="baseButton-secondary"], button[data-testid="baseButton-primary"]');
+    btns.forEach(function(btn) {{
+        if (btn.innerText && btn.innerText.trim().startsWith(
+            key === 'home'    ? '🏠' :
+            key === 'manage'  ? '🗓' :
+            key === 'chat'    ? '💬' :
+            key === 'account' ? '👤' : '')) {{
+            btn.click();
+        }}
+    }});
+}}
+
+// Move fixed-header outside Streamlit's scroll container
+(function() {{
+    var el = document.getElementById('fixed-header');
+    if (!el) return;
+    // Move to top of body so it's truly fixed
+    var body = window.parent.document.body;
+    var existing = window.parent.document.getElementById('fixed-header-portal');
+    if (existing) existing.remove();
+    var portal = window.parent.document.createElement('div');
+    portal.id = 'fixed-header-portal';
+    portal.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
+    portal.innerHTML = el.outerHTML;
+
+    // Copy styles
+    var styleEl = window.parent.document.getElementById('trip-header-styles');
+    if (!styleEl) {{
+        styleEl = window.parent.document.createElement('style');
+        styleEl.id = 'trip-header-styles';
+        styleEl.textContent = `
+            #fixed-header-portal .navbar {{
+                background:#1d4ed8; display:flex; align-items:center;
+                height:50px; padding:0 12px; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,.3);
+            }}
+            #fixed-header-portal .navbar * {{ color:#fff !important; }}
+            #fixed-header-portal .nb-icon  {{ font-size:20px; flex-shrink:0; }}
+            #fixed-header-portal .nb-title {{ font-weight:800; font-size:15px; white-space:nowrap; flex-shrink:0; }}
+            #fixed-header-portal .nb-trip  {{
+                background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35);
+                border-radius:20px; padding:2px 10px; font-size:12px; font-weight:600;
+                max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
+            }}
+            #fixed-header-portal .nb-spacer {{ flex:1; }}
+            #fixed-header-portal .nb-badge-g {{
+                background:#16a34a; border-radius:20px;
+                padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
+            }}
+            #fixed-header-portal .nb-badge-r {{
+                background:#dc2626; border-radius:20px;
+                padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
+            }}
+            #fixed-header-portal .nb-avatar {{
+                width:28px; height:28px; border-radius:50%;
+                background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.5);
+                display:flex; align-items:center; justify-content:center;
+                font-weight:800; font-size:13px; flex-shrink:0;
+            }}
+            #fixed-header-portal .nb-name {{
+                font-size:12px; font-weight:600; color:#fff !important;
+                max-width:65px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
+            }}
+            #fixed-header-portal .menubar {{
+                background:#1e3a8a; display:flex; height:44px;
+                border-bottom:3px solid #1d4ed8;
+            }}
+            #fixed-header-portal .mb-item {{
+                flex:1; display:flex; align-items:center; justify-content:center;
+                font-size:13px; font-weight:700; cursor:pointer;
+                color:#93c5fd !important; border:none; background:transparent;
+                border-bottom:3px solid transparent; margin-bottom:-3px;
+                white-space:nowrap; padding:0 2px; transition:background .15s,color .15s;
+                -webkit-tap-highlight-color:transparent;
+            }}
+            #fixed-header-portal .mb-item:hover {{ background:rgba(255,255,255,.1); color:#fff !important; }}
+            #fixed-header-portal .mb-item.active {{ color:#fff !important; border-bottom:3px solid #60a5fa; background:rgba(255,255,255,.1); }}
+            @media(max-width:600px) {{
+                #fixed-header-portal .nb-title {{ display:none; }}
+                #fixed-header-portal .nb-trip  {{ max-width:90px; }}
+                #fixed-header-portal .mb-item  {{ font-size:11px; }}
+            }}
+        `;
+        window.parent.document.head.appendChild(styleEl);
+    }}
+
+    // Wire up click handlers
+    portal.querySelectorAll('.mb-item').forEach(function(item) {{
+        item.addEventListener('click', function() {{
+            var key = item.getAttribute('onclick').match(/setMenu\('(.+?)'\)/)?.[1];
+            if (!key) return;
+            var emoji = key === 'home' ? '🏠' : key === 'manage' ? '🗓' : key === 'chat' ? '💬' : '👤';
+            var allBtns = window.parent.document.querySelectorAll('button');
+            allBtns.forEach(function(btn) {{
+                var txt = btn.innerText || btn.textContent || '';
+                if (txt.trim().startsWith(emoji)) btn.click();
+            }});
+        }});
+    }});
+
+    body.insertBefore(portal, body.firstChild);
+    el.style.display = 'none';
+}})();
+</script>
+""", unsafe_allow_html=True)
+
+# Streamlit nav buttons (hidden visually, triggered by JS)
 nav_cols = st.columns(len(MENUS))
-for col,(icon,label,key) in zip(nav_cols, MENUS):
-    badge = f" 🔴{notif_count}" if key=="chat" and notif_count>0 else ""
-    active = st.session_state["menu"]==key
+for col, (icon, label, key) in zip(nav_cols, MENUS):
+    badge = f" 🔴{notif_count}" if key == "chat" and notif_count > 0 else ""
+    active = st.session_state["menu"] == key
     if col.button(f"{icon} {label}{badge}", key=f"nav_{key}",
                   type="primary" if active else "secondary", use_container_width=True):
         st.session_state["menu"] = key; st.rerun()
 
-st.markdown('<div class="menu-divider"></div>', unsafe_allow_html=True)
+# Hide the Streamlit nav buttons visually (they still function as click targets)
+st.markdown("""<style>
+[data-testid="stHorizontalBlock"]:first-of-type { 
+    visibility: hidden !important; 
+    height: 0px !important; 
+    overflow: hidden !important;
+    margin: 0 !important; padding: 0 !important;
+}
+</style>""", unsafe_allow_html=True)
 
 menu = st.session_state["menu"]
 
 # ═══════════════════════════════════════════════════════
-# PAGE: หลัก
+# PAGE ROUTING
 # ═══════════════════════════════════════════════════════
 if menu == "home":
     if not me:
