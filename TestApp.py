@@ -41,81 +41,82 @@ html, body, [data-testid="stAppViewContainer"] {
 [data-testid="stMain"] { padding-top: 0 !important; }
 
 /* ── Top Navbar ── */
-.fb-navbar {
+.app-navbar {
     position: sticky;
     top: 0;
     z-index: 999;
-    background: #fff;
-    border-bottom: 1px solid #dadde1;
-    box-shadow: 0 2px 4px rgba(0,0,0,.08);
-    padding: 0 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #e4e6eb;
+    box-shadow: 0 1px 6px rgba(0,0,0,.07);
+    padding: 0 20px;
     display: flex;
     align-items: center;
-    height: 56px;
-    gap: 12px;
+    height: 52px;
+    gap: 14px;
 }
-.fb-navbar-logo {
-    font-size: 28px; font-weight: 900; color: #1877f2;
-    letter-spacing: -1px; flex-shrink: 0; text-decoration: none;
-    font-family: Georgia, serif;
+.app-navbar-icon {
+    font-size: 22px; flex-shrink: 0;
 }
-.fb-navbar-title {
-    font-weight: 700; font-size: 16px; color: #1c1e21;
-    white-space: nowrap; flex-shrink: 0;
+.app-navbar-title {
+    font-weight: 800; font-size: 17px;
+    color: #1c1e21; white-space: nowrap; flex-shrink: 0;
+    letter-spacing: -0.3px;
 }
-.fb-navbar-sep { color: #dadde1; font-size: 20px; flex-shrink:0; }
-.fb-navbar-trip {
-    background: #e7f3ff; color: #1877f2;
-    padding: 4px 12px; border-radius: 20px;
-    font-weight: 600; font-size: 14px; white-space: nowrap;
-}
-.fb-navbar-spacer { flex: 1; }
-.fb-navbar-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: #1877f2; color: #fff;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 15px; flex-shrink: 0; cursor: pointer;
-}
-.fb-online-badge {
-    background: #31a24c; color: #fff;
-    padding: 2px 8px; border-radius: 20px;
-    font-size: 12px; font-weight: 600; white-space: nowrap;
-}
-.fb-notif-badge {
-    background: #fa3e3e; color: #fff;
-    padding: 2px 8px; border-radius: 20px;
-    font-size: 12px; font-weight: 700; white-space: nowrap;
-}
-
-/* ── Content area ── */
-.fb-content { padding: 16px 24px; }
-
-/* ── Menu bar (below navbar) ── */
-.fb-menubar {
-    background: #fff;
-    border-bottom: 1px solid #dadde1;
-    padding: 0 24px;
-    display: flex;
-    gap: 4px;
-    align-items: center;
-    overflow-x: auto;
-}
-.fb-menubar-item {
-    padding: 12px 16px;
-    font-weight: 600; font-size: 14px;
-    color: #65676b; cursor: pointer;
-    border-bottom: 3px solid transparent;
+.app-navbar-trip {
+    background: #f0f2f5;
+    color: #444;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
     white-space: nowrap;
-    text-decoration: none;
+    border: 1px solid #e4e6eb;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.fb-menubar-item:hover { color: #1877f2; background: #f0f2f5; border-radius: 6px; }
-.fb-menubar-item.active { color: #1877f2; border-bottom: 3px solid #1877f2; }
+.app-navbar-spacer { flex: 1; }
+.app-navbar-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #4f8ef7, #1877f2);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(24,119,242,.3);
+}
+.app-online-badge {
+    background: #e6f4ea; color: #2d7d46;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+    border: 1px solid #b7dfc3;
+}
+.app-notif-badge {
+    background: #fff0f0; color: #d93025;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; white-space: nowrap;
+    border: 1px solid #f5c6c6;
+}
+.app-user-name {
+    font-size: 13px; font-weight: 600; color: #1c1e21;
+    white-space: nowrap; max-width: 100px;
+    overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ── Cards ── */
-.fb-card {
-    background: #fff; border: 1px solid #dadde1;
-    border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.06);
-    padding: 20px; margin-bottom: 16px;
+.app-card {
+    background: #fff;
+    border: 1px solid #e4e6eb;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+}
+
+/* ── Section heading ── */
+.section-title {
+    font-size: 18px; font-weight: 700; color: #1c1e21;
+    margin: 0 0 14px 0; padding-bottom: 10px;
+    border-bottom: 2px solid #e4e6eb;
 }
 
 /* ── Tabs ── */
@@ -135,71 +136,128 @@ html, body, [data-testid="stAppViewContainer"] {
 
 /* ── Buttons ── */
 .stButton > button {
-    border-radius: 6px !important; font-weight: 600 !important; font-size: 14px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 13.5px !important;
+    padding: 6px 14px !important;
+    transition: all .15s !important;
 }
 .stButton > button[kind="primary"] {
-    background: #1877f2 !important; border: none !important; color: #fff !important;
+    background: linear-gradient(135deg, #4f8ef7, #1877f2) !important;
+    border: none !important; color: #fff !important;
+    box-shadow: 0 1px 4px rgba(24,119,242,.3) !important;
 }
-.stButton > button[kind="primary"]:hover { background: #166fe5 !important; }
+.stButton > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #3a7de0, #1464d8) !important;
+    box-shadow: 0 2px 8px rgba(24,119,242,.4) !important;
+    transform: translateY(-1px) !important;
+}
+.stButton > button[kind="secondary"] {
+    background: #f0f2f5 !important; border: 1px solid #e4e6eb !important;
+    color: #444 !important;
+}
+.stButton > button[kind="secondary"]:hover {
+    background: #e4e6eb !important; color: #1c1e21 !important;
+}
 
 /* ── Inputs ── */
 [data-testid="stTextInput"] input,
 [data-testid="stNumberInput"] input,
 [data-testid="stTextArea"] textarea {
-    border-radius: 20px !important; border: 1px solid #ccd0d5 !important;
-    background: #f0f2f5 !important; font-size: 15px !important;
-    padding: 8px 16px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid #e4e6eb !important;
+    background: #f7f8fa !important;
+    font-size: 14px !important;
+    padding: 8px 14px !important;
+    transition: border-color .15s, box-shadow .15s !important;
 }
 [data-testid="stTextInput"] input:focus,
 [data-testid="stNumberInput"] input:focus,
 [data-testid="stTextArea"] textarea:focus {
     border-color: #1877f2 !important; background: #fff !important;
-    box-shadow: 0 0 0 2px rgba(24,119,242,.2) !important;
+    box-shadow: 0 0 0 3px rgba(24,119,242,.12) !important;
 }
 
 /* ── Expanders ── */
 [data-testid="stExpander"] {
-    background: #fff !important; border: 1px solid #dadde1 !important;
-    border-radius: 8px !important; box-shadow: 0 1px 2px rgba(0,0,0,.06) !important;
-    margin-bottom: 8px !important;
+    background: #fff !important;
+    border: 1.5px solid #e4e6eb !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04) !important;
+    margin-bottom: 10px !important;
+}
+[data-testid="stExpander"] summary {
+    font-weight: 600 !important; font-size: 14px !important; padding: 12px 16px !important;
 }
 
 /* ── Messenger bubbles ── */
 .fb-bubble-out {
-    align-self: flex-end; background: #0084ff; color: #fff;
-    padding: 8px 14px; border-radius: 18px 18px 4px 18px;
-    max-width: 75%; font-size: 14px; line-height: 1.45;
+    align-self: flex-end; background: linear-gradient(135deg,#4f8ef7,#0084ff); color: #fff;
+    padding: 9px 15px; border-radius: 18px 18px 4px 18px;
+    max-width: 72%; font-size: 14px; line-height: 1.5;
     margin-left: auto; word-break: break-word;
+    box-shadow: 0 1px 3px rgba(0,132,255,.2);
 }
 .fb-bubble-in {
-    align-self: flex-start; background: #f0f0f0; color: #1c1e21;
-    padding: 8px 14px; border-radius: 18px 18px 18px 4px;
-    max-width: 75%; font-size: 14px; line-height: 1.45; word-break: break-word;
+    align-self: flex-start; background: #f0f2f5; color: #1c1e21;
+    padding: 9px 15px; border-radius: 18px 18px 18px 4px;
+    max-width: 72%; font-size: 14px; line-height: 1.5; word-break: break-word;
+    border: 1px solid #e4e6eb;
 }
 .fb-bubble-sys {
-    align-self: center; background: #e7f3ff; color: #1877f2;
-    padding: 6px 14px; border-radius: 12px; max-width: 90%;
-    font-size: 13px; border-left: 4px solid #1877f2; line-height: 1.45; word-break: break-word;
+    align-self: center; background: #f0f7ff; color: #1877f2;
+    padding: 8px 14px; border-radius: 10px; max-width: 92%;
+    font-size: 13px; border-left: 3px solid #1877f2; line-height: 1.5;
+    word-break: break-word; margin: 4px auto;
 }
-.fb-bubble-time { font-size: 11px; color: #8a8d91; margin-top: 2px; text-align: right; }
+.fb-bubble-time { font-size: 11px; color: #b0b3b8; margin-top: 3px; text-align: right; }
 .fb-bubble-time.left { text-align: left; }
-.fb-sender-name { font-size: 12px; color: #65676b; font-weight: 600; margin-bottom: 2px; margin-left: 2px; }
+.fb-sender-name { font-size: 11px; color: #8a8d91; font-weight: 600; margin-bottom: 2px; margin-left: 4px; }
 .fb-chat-body {
-    background: #fff; min-height: 160px; max-height: 300px; overflow-y: auto;
-    padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
-    border: 1px solid #e4e6eb; border-radius: 8px; margin-bottom: 8px;
+    background: #fafbfc; min-height: 200px; max-height: 420px; overflow-y: auto;
+    padding: 16px; display: flex; flex-direction: column; gap: 6px;
+    border: 1.5px solid #e4e6eb; border-radius: 10px; margin-bottom: 10px;
 }
 .fb-badge {
     display: inline-block; background: #fa3e3e; color: #fff;
-    border-radius: 10px; padding: 1px 7px; font-size: 12px; font-weight: 700;
-    margin-left: 4px; vertical-align: middle;
+    border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700;
+    margin-left: 5px; vertical-align: middle;
 }
 
 /* ── Alert ── */
-[data-testid="stAlert"] { border-radius: 8px !important; }
+[data-testid="stAlert"] { border-radius: 10px !important; font-size: 14px !important; }
 
-/* ── Remove top gap from blocks ── */
-.block-container { padding-top: 0 !important; }
+/* ── Selectbox ── */
+[data-testid="stSelectbox"] > div > div {
+    border-radius: 10px !important; border: 1.5px solid #e4e6eb !important;
+    background: #f7f8fa !important; font-size: 14px !important;
+}
+
+/* ── Tabs ── */
+[data-testid="stTabs"] [role="tablist"] {
+    border-bottom: 2px solid #e4e6eb !important;
+    background: #fff !important; border-radius: 10px 10px 0 0 !important;
+    padding: 0 12px !important; gap: 4px !important;
+}
+[data-testid="stTabs"] [role="tab"] {
+    color: #65676b !important; font-weight: 600 !important;
+    font-size: 14px !important; padding: 11px 18px !important;
+    border-bottom: 3px solid transparent !important; border-radius: 0 !important;
+    transition: color .15s !important;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    color: #1877f2 !important; border-bottom: 3px solid #1877f2 !important;
+}
+[data-testid="stTabs"] [role="tab"]:hover { color: #1877f2 !important; }
+
+/* ── Remove top gap ── */
+.block-container { padding-top: 0 !important; padding-left: 2rem !important; padding-right: 2rem !important; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f0f2f5; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #c4c6ca; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #8a8d91; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -329,27 +387,28 @@ if me and trip_id:
 # ─────────────────────────────────────────────
 # 5. TOP NAVBAR  (pure HTML — always visible)
 # ─────────────────────────────────────────────
-trip_label = f"✈️ {current_trip}" if current_trip else "— ยังไม่เลือก Event —"
-user_avatar = f'<div class="fb-navbar-avatar">{me[0].upper()}</div>' if me else '<div class="fb-navbar-avatar" style="background:#8a8d91;">?</div>'
-online_html = f'<span class="fb-online-badge">🟢 {len(online_users)} ออนไลน์</span>' if online_users else ""
-notif_html  = f'<span class="fb-notif-badge">🔔 {notif_count}</span>' if notif_count > 0 else ""
+trip_label    = f"✈️  {current_trip}" if current_trip else "ยังไม่เลือก Event"
+user_avatar   = f'<div class="app-navbar-avatar">{me[0].upper()}</div>' if me else '<div class="app-navbar-avatar" style="background:#b0b3b8;">?</div>'
+online_html   = f'<span class="app-online-badge">🟢 {len(online_users)} ออนไลน์</span>' if online_users else ""
+notif_html    = f'<span class="app-notif-badge">🔔 {notif_count}</span>' if notif_count > 0 else ""
+user_name_html= f'<span class="app-user-name">{me}</span>' if me else '<span class="app-user-name" style="color:#8a8d91;">ยังไม่ล็อกอิน</span>'
 
 st.markdown(f"""
-<div class="fb-navbar">
-  <span class="fb-navbar-logo">f</span>
-  <span class="fb-navbar-title">Trip Splitter</span>
-  <span class="fb-navbar-sep">|</span>
-  <span class="fb-navbar-trip">{trip_label}</span>
-  <span class="fb-navbar-spacer"></span>
+<div class="app-navbar">
+  <span class="app-navbar-icon">✈️</span>
+  <span class="app-navbar-title">Trip Expense Splitter</span>
+  <span style="color:#e4e6eb;font-size:18px;flex-shrink:0;">│</span>
+  <span class="app-navbar-trip">{trip_label}</span>
+  <span class="app-navbar-spacer"></span>
   {online_html}
   {notif_html}
   {user_avatar}
-  <span style="font-size:13px;font-weight:600;color:#1c1e21;">{me or 'ยังไม่ล็อกอิน'}</span>
+  {user_name_html}
 </div>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# 6. MENU BAR  (Streamlit buttons styled as tabs)
+# 6. MENU BAR
 # ─────────────────────────────────────────────
 menu_items = [
     ("🏠", "หน้าหลัก",  "home"),
@@ -359,16 +418,19 @@ menu_items = [
     ("👤", "บัญชีฉัน",  "account"),
 ]
 
+# Thin separator line below navbar
+st.markdown('<div style="height:2px;background:#f0f2f5;margin:0;"></div>', unsafe_allow_html=True)
+
 nav_cols = st.columns(len(menu_items))
 for col, (icon, label, key) in zip(nav_cols, menu_items):
-    badge = f" 🔴{notif_count}" if key == "chat" and notif_count > 0 else ""
+    badge = f"  🔴{notif_count}" if key == "chat" and notif_count > 0 else ""
     is_active = st.session_state["active_menu"] == key
     btn_type = "primary" if is_active else "secondary"
-    if col.button(f"{icon} {label}{badge}", key=f"nav_{key}", type=btn_type, use_container_width=True):
+    if col.button(f"{icon}  {label}{badge}", key=f"nav_{key}", type=btn_type, use_container_width=True):
         st.session_state["active_menu"] = key
         st.rerun()
 
-st.markdown("<hr style='margin:0 0 16px 0;border-color:#dadde1;'>", unsafe_allow_html=True)
+st.markdown('<div style="height:1px;background:#e4e6eb;margin:4px 0 20px 0;"></div>', unsafe_allow_html=True)
 
 active_menu = st.session_state["active_menu"]
 
@@ -378,24 +440,26 @@ active_menu = st.session_state["active_menu"]
 if active_menu == "home":
     if not me:
         st.markdown("""
-        <div style="text-align:center;padding:60px 20px;background:#fff;border-radius:12px;border:1px solid #dadde1;">
-          <div style="font-size:64px;">✈️</div>
-          <h2 style="color:#1c1e21;">Trip Expense Splitter</h2>
-          <p style="color:#65676b;">ไปที่ <b>บัญชีฉัน</b> เพื่อเข้าสู่ระบบก่อนเริ่มใช้งาน</p>
+        <div style="text-align:center;padding:70px 20px;background:#fff;border-radius:14px;border:1.5px solid #e4e6eb;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+          <div style="font-size:56px;margin-bottom:12px;">✈️</div>
+          <div style="font-weight:800;font-size:22px;color:#1c1e21;margin-bottom:8px;">Trip Expense Splitter</div>
+          <p style="color:#65676b;font-size:15px;">ไปที่เมนู <b>บัญชีฉัน</b> เพื่อเข้าสู่ระบบก่อนเริ่มใช้งาน</p>
         </div>""", unsafe_allow_html=True)
     elif not trip_id or not current_trip:
         st.info("ไปที่ **Events** เพื่อสร้างหรือเลือก Event ก่อนครับ")
     else:
         has_date = current_trip_date and str(current_trip_date).strip()
         st.markdown(f"""
-        <div class="fb-card" style="display:flex;align-items:center;gap:16px;">
-          <div style="width:56px;height:56px;border-radius:50%;background:#1877f2;
-                      display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">✈️</div>
-          <div>
-            <h2 style="margin:0;color:#1c1e21;">{current_trip}</h2>
-            <p style="margin:0;color:#65676b;font-size:14px;">
-              {'📅 ' + str(current_trip_date) if has_date else ''} &nbsp;·&nbsp; 👥 {len(existing_members)} สมาชิก
-            </p>
+        <div class="app-card" style="display:flex;align-items:center;gap:16px;padding:18px 22px;">
+          <div style="width:52px;height:52px;border-radius:14px;
+                      background:linear-gradient(135deg,#4f8ef7,#1877f2);
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:26px;flex-shrink:0;box-shadow:0 2px 8px rgba(24,119,242,.25);">✈️</div>
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:20px;color:#1c1e21;line-height:1.2;">{current_trip}</div>
+            <div style="color:#65676b;font-size:13px;margin-top:3px;">
+              {'📅 ' + str(current_trip_date) if has_date else ''}{' &nbsp;·&nbsp; ' if has_date else ''}👥 {len(existing_members)} สมาชิก
+            </div>
           </div>
         </div>""", unsafe_allow_html=True)
 
@@ -519,11 +583,14 @@ if active_menu == "home":
                     icon  = "🟢" if b>0.01 else ("🔴" if b<-0.01 else "⚖️")
                     label = "รับคืน" if b>0.01 else ("ต้องจ่าย" if b<-0.01 else "เท่ากัน")
                     with cols_net[i%4]:
-                        st.markdown(f"""<div style="background:#fff;border-radius:10px;padding:14px;border:1px solid #dadde1;text-align:center;border-top:4px solid {color};margin-bottom:8px;">
-                          <div style="font-size:20px;">{icon}</div>
-                          <div style="font-weight:700;font-size:14px;color:#1c1e21;">{m}</div>
-                          <div style="font-size:12px;color:#65676b;">{label}</div>
-                          <div style="font-weight:700;font-size:17px;color:{color};">{abs(b):,.2f} ฿</div>
+                        st.markdown(f"""<div style="background:#fff;border-radius:12px;padding:16px 14px;
+                                    border:1.5px solid #e4e6eb;text-align:center;
+                                    border-top:4px solid {color};margin-bottom:10px;
+                                    box-shadow:0 1px 4px rgba(0,0,0,.05);">
+                          <div style="font-size:22px;margin-bottom:4px;">{icon}</div>
+                          <div style="font-weight:700;font-size:14px;color:#1c1e21;margin-bottom:2px;">{m}</div>
+                          <div style="font-size:11px;color:#8a8d91;margin-bottom:6px;">{label}</div>
+                          <div style="font-weight:800;font-size:18px;color:{color};">{abs(b):,.2f} ฿</div>
                         </div>""", unsafe_allow_html=True)
 
                 st.markdown("### 🚀 แผนการโอนเงิน")
@@ -536,13 +603,15 @@ if active_menu == "home":
                     prof = user_profiles.get(c_n,{}); pp=(prof.get("promptpay") or "").strip()
                     b_nm=(prof.get("bank_name") or "").strip(); b_acc=(prof.get("bank_acc") or "").strip()
                     is_me_tx = (d_n == me)
-                    border = "border:2px solid #1877f2;" if is_me_tx else "border:1px solid #dadde1;"
-                    bg     = "background:#e7f3ff;" if is_me_tx else "background:#fff;"
-                    badge  = '<span style="background:#1877f2;color:#fff;padding:2px 8px;border-radius:10px;font-size:12px;">⚠️ คุณ</span>' if is_me_tx else ""
-                    st.markdown(f"""<div style="{bg}{border}border-radius:12px;padding:14px;margin-bottom:10px;">
-                      <div style="font-size:15px;font-weight:600;color:#1c1e21;margin-bottom:8px;">
-                        💳 <b>{d_n}</b> {badge} &nbsp;→&nbsp; 👉 <b>{c_n}</b> &nbsp;
-                        <span style="background:#fa3e3e;color:#fff;padding:3px 12px;border-radius:20px;font-size:14px;">{amt_t:,.2f} ฿</span>
+                    border = "border:2px solid #1877f2;" if is_me_tx else "border:1.5px solid #e4e6eb;"
+                    bg     = "background:#f0f7ff;" if is_me_tx else "background:#fff;"
+                    badge  = '<span style="background:#1877f2;color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;">⚠️ คุณ</span>' if is_me_tx else ""
+                    st.markdown(f"""<div style="{bg}{border}border-radius:12px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+                      <div style="font-size:15px;font-weight:700;color:#1c1e21;margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+                        💳 <b>{d_n}</b> {badge}
+                        <span style="color:#8a8d91;font-size:18px;">→</span>
+                        👉 <b>{c_n}</b>
+                        <span style="background:#d93025;color:#fff;padding:3px 14px;border-radius:20px;font-size:14px;font-weight:700;margin-left:auto;">{amt_t:,.2f} ฿</span>
                       </div></div>""", unsafe_allow_html=True)
                     if pp or b_acc:
                         pay_c = st.columns(2)
@@ -685,10 +754,15 @@ elif active_menu == "members":
                     badge_html = f'<span class="fb-badge">{unread_cnt}</span>' if unread_cnt > 0 else ""
                     you_tag = " <i>(คุณ)</i>" if member == me else ""
                     mc1, mc2 = st.columns([5,1])
-                    mc1.markdown(f"""<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f2f5;">
-                      <div style="width:36px;height:36px;border-radius:50%;background:#1877f2;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0;">{member[0].upper()}</div>
-                      <div><div style="font-weight:600;font-size:14px;">{dot} {member}{you_tag}{badge_html}</div>
-                      <div style="font-size:12px;color:#65676b;">{'ออนไลน์' if is_on else 'ออฟไลน์'}</div></div>
+                    mc1.markdown(f"""<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f2f5;">
+                      <div style="width:38px;height:38px;border-radius:50%;
+                                  background:linear-gradient(135deg,#4f8ef7,#1877f2);
+                                  display:flex;align-items:center;justify-content:center;
+                                  color:#fff;font-weight:700;font-size:15px;flex-shrink:0;">{member[0].upper()}</div>
+                      <div>
+                        <div style="font-weight:600;font-size:14px;color:#1c1e21;">{dot} {member}{you_tag}{badge_html}</div>
+                        <div style="font-size:12px;color:#8a8d91;">{'🟢 ออนไลน์' if is_on else '⚪ ออฟไลน์'}</div>
+                      </div>
                     </div>""", unsafe_allow_html=True)
                     if mc2.button("ออก", key=f"rm_{member}"):
                         conn_ml.execute("DELETE FROM members WHERE trip_id=? AND name=?", (trip_id,member))
@@ -787,9 +861,10 @@ elif active_menu == "chat":
             partner = st.session_state.get("chat_partner")
             if not partner:
                 st.markdown("""
-                <div style="text-align:center;padding:80px;background:#fff;border-radius:12px;border:1px solid #dadde1;">
-                  <div style="font-size:48px;">💬</div>
-                  <p style="color:#65676b;font-size:16px;">เลือกการสนทนาทางซ้าย หรือเริ่มแชทใหม่</p>
+                <div style="text-align:center;padding:80px 24px;background:#fff;border-radius:12px;border:1.5px solid #e4e6eb;">
+                  <div style="font-size:44px;margin-bottom:12px;">💬</div>
+                  <div style="font-weight:700;font-size:16px;color:#1c1e21;margin-bottom:6px;">เลือกการสนทนา</div>
+                  <p style="color:#8a8d91;font-size:14px;">เลือกจากรายการซ้าย หรือเริ่มแชทใหม่</p>
                 </div>""", unsafe_allow_html=True)
             elif partner not in chat_groups and partner not in [m for m in existing_members]:
                 st.info("เลือกการสนทนาจากรายการซ้ายมือ")
@@ -810,19 +885,22 @@ elif active_menu == "chat":
                 init_p = partner[0].upper()
                 is_on_p = partner in online_users
                 st.markdown(f"""
-                <div style="background:#fff;border:1px solid #dadde1;border-radius:10px 10px 0 0;
-                            padding:12px 16px;display:flex;align-items:center;gap:12px;">
-                  <div style="width:40px;height:40px;border-radius:50%;background:#1877f2;
+                <div style="background:#fff;border:1.5px solid #e4e6eb;border-radius:12px 12px 0 0;
+                            padding:14px 18px;display:flex;align-items:center;gap:12px;
+                            box-shadow:0 1px 3px rgba(0,0,0,.04);">
+                  <div style="width:42px;height:42px;border-radius:50%;
+                              background:linear-gradient(135deg,#4f8ef7,#1877f2);
                               display:flex;align-items:center;justify-content:center;
-                              color:#fff;font-weight:700;font-size:16px;">{init_p}</div>
-                  <div>
+                              color:#fff;font-weight:700;font-size:16px;
+                              box-shadow:0 2px 6px rgba(24,119,242,.25);">{init_p}</div>
+                  <div style="flex:1;">
                     <div style="font-weight:700;font-size:16px;color:#1c1e21;">{partner}</div>
-                    <div style="font-size:12px;color:{'#31a24c' if is_on_p else '#8a8d91'};">
-                      {'🟢 ออนไลน์' if is_on_p else '⚪ ออฟไลน์'}
+                    <div style="font-size:12px;color:{'#2d7d46' if is_on_p else '#8a8d91'};font-weight:500;">
+                      {'🟢 ออนไลน์อยู่' if is_on_p else '⚪ ออฟไลน์'}
                     </div>
                   </div>
-                  <div style="margin-left:auto;display:flex;gap:16px;font-size:20px;color:#1877f2;">
-                    <span>📞</span><span>📹</span>
+                  <div style="display:flex;gap:16px;font-size:19px;color:#1877f2;opacity:.8;">
+                    <span title="โทร">📞</span><span title="วิดีโอ">📹</span>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -915,13 +993,16 @@ elif active_menu == "account":
         else:
             st.markdown(f"""
             <div style="display:flex;align-items:center;gap:16px;background:#fff;
-                        border-radius:12px;padding:20px;border:1px solid #dadde1;margin-bottom:16px;">
-              <div style="width:64px;height:64px;border-radius:50%;background:#1877f2;
+                        border-radius:14px;padding:22px;border:1.5px solid #e4e6eb;
+                        margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+              <div style="width:68px;height:68px;border-radius:50%;
+                          background:linear-gradient(135deg,#4f8ef7,#1877f2);
                           display:flex;align-items:center;justify-content:center;
-                          color:#fff;font-weight:700;font-size:28px;">{me[0].upper()}</div>
+                          color:#fff;font-weight:800;font-size:28px;
+                          box-shadow:0 3px 10px rgba(24,119,242,.3);">{me[0].upper()}</div>
               <div>
-                <div style="font-weight:700;font-size:20px;color:#1c1e21;">{me}</div>
-                <div style="font-size:14px;color:#31a24c;font-weight:500;">🟢 ออนไลน์</div>
+                <div style="font-weight:800;font-size:20px;color:#1c1e21;">{me}</div>
+                <div style="font-size:13px;color:#2d7d46;font-weight:600;margin-top:3px;">🟢 ออนไลน์อยู่</div>
               </div>
             </div>
             """, unsafe_allow_html=True)
@@ -959,11 +1040,15 @@ elif active_menu == "account":
                 dot = "🟢" if is_on else "⚪"
                 you = " *(คุณ)*" if u == me else ""
                 st.markdown(f"""
-                <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f2f5;">
-                  <div style="width:34px;height:34px;border-radius:50%;background:#{'1877f2' if is_on else 'bcc0c4'};
-                              display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;">{u[0].upper()}</div>
-                  <div><div style="font-weight:600;font-size:14px;color:#1c1e21;">{u}{you}</div>
-                  <div style="font-size:12px;color:#65676b;">{dot} {'ออนไลน์' if is_on else 'ออฟไลน์'}</div></div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f2f5;">
+                  <div style="width:36px;height:36px;border-radius:50%;
+                              background:{'linear-gradient(135deg,#4f8ef7,#1877f2)' if is_on else '#e4e6eb'};
+                              display:flex;align-items:center;justify-content:center;
+                              color:{'#fff' if is_on else '#8a8d91'};font-weight:700;font-size:14px;">{u[0].upper()}</div>
+                  <div>
+                    <div style="font-weight:600;font-size:14px;color:#1c1e21;">{u}{you}</div>
+                    <div style="font-size:12px;color:#8a8d91;">{dot} {'ออนไลน์' if is_on else 'ออฟไลน์'}</div>
+                  </div>
                 </div>""", unsafe_allow_html=True)
         else:
             st.caption("ยังไม่มีสมาชิกในระบบ")
