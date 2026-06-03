@@ -40,70 +40,103 @@ html,body,
 }
 [data-testid="stMainBlockContainer"] { max-width: 100% !important; }
 
-/* ══ FIXED HEADER SHELL (navbar + menubar injected by JS into this) ══ */
-#fixed-header {
+/* ══ NAVBAR (fixed at top) ══ */
+.navbar-wrap {
     position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 9999;
+    top: 0; left: 0; right: 0; z-index: 9999;
     font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
-
-/* ── Navbar ── */
-#fixed-header .navbar {
+.navbar-wrap .navbar {
     background: #1d4ed8;
     display: flex; align-items: center;
     height: 50px; padding: 0 12px; gap: 8px;
     box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
-#fixed-header .navbar * { color: #fff !important; }
-#fixed-header .nb-icon  { font-size: 20px; flex-shrink:0; }
-#fixed-header .nb-title { font-weight:800; font-size:15px; white-space:nowrap; flex-shrink:0; }
-#fixed-header .nb-trip  {
+.navbar-wrap .navbar * { color: #fff !important; }
+.navbar-wrap .nb-icon  { font-size: 20px; flex-shrink:0; }
+.navbar-wrap .nb-title { font-weight:800; font-size:15px; white-space:nowrap; flex-shrink:0; }
+.navbar-wrap .nb-trip  {
     background: rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35);
     border-radius:20px; padding:2px 10px; font-size:12px; font-weight:600;
     max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
 }
-#fixed-header .nb-spacer { flex:1; }
-#fixed-header .nb-badge-g {
+.navbar-wrap .nb-spacer { flex:1; }
+.navbar-wrap .nb-badge-g {
     background:#16a34a; border-radius:20px;
     padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
 }
-#fixed-header .nb-badge-r {
+.navbar-wrap .nb-badge-r {
     background:#dc2626; border-radius:20px;
     padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
 }
-#fixed-header .nb-avatar {
+.navbar-wrap .nb-avatar {
     width:28px; height:28px; border-radius:50%;
     background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.5);
     display:flex; align-items:center; justify-content:center;
     font-weight:800; font-size:13px; flex-shrink:0;
 }
-#fixed-header .nb-name {
+.navbar-wrap .nb-name {
     font-size:12px; font-weight:600;
     max-width:65px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
 }
 
-/* ── Menubar ── */
-#fixed-header .menubar {
-    background: #1e3a8a;
-    display: flex; height: 44px;
-    border-bottom: 3px solid #1d4ed8;
+/* ══ MENUBAR — fix the Streamlit columns row at top:50px ══ */
+div[data-testid="stHorizontalBlock"]:has(button[data-testid^="baseButton"][key^="nav_"]),
+div[data-testid="stHorizontalBlock"].nav-row {
+    position: fixed !important;
+    top: 50px !important;
+    left: 0 !important; right: 0 !important;
+    z-index: 9998 !important;
+    background: #1e3a8a !important;
+    padding: 0 !important; margin: 0 !important;
+    gap: 0 !important;
+    border-bottom: 3px solid #60a5fa !important;
+    width: 100% !important;
 }
-#fixed-header .menubar .mb-item {
-    flex: 1; display:flex; align-items:center; justify-content:center;
-    font-size:13px; font-weight:700; cursor:pointer;
-    color: #93c5fd !important; border:none; background:transparent;
-    border-bottom: 3px solid transparent; margin-bottom:-3px;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    padding:0 4px; transition: background .15s, color .15s;
-    text-decoration:none;
+
+/* Simpler fallback — target first horizontal block after app start */
+section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type {
+    position: fixed !important;
+    top: 50px !important;
+    left: 0 !important; right: 0 !important; width: 100% !important;
+    z-index: 9998 !important;
+    background: #1e3a8a !important;
+    padding: 0 !important; margin: 0 !important; gap: 0 !important;
+    border-bottom: 3px solid #60a5fa !important;
 }
-#fixed-header .menubar .mb-item:hover  { background:rgba(255,255,255,.1); color:#fff !important; }
-#fixed-header .menubar .mb-item.active { color:#fff !important; border-bottom:3px solid #60a5fa; background:rgba(255,255,255,.08); }
+section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"] {
+    padding: 0 !important; flex: 1 !important; min-width: 0 !important;
+}
+section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button {
+    border-radius: 0 !important;
+    height: 44px !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 0 2px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+}
+section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="secondary"] {
+    background: #1e3a8a !important; color: #93c5fd !important;
+}
+section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="secondary"] p {
+    color: #93c5fd !important;
+}
+section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="primary"] {
+    background: #1d4ed8 !important; color: #fff !important;
+    border-bottom: 3px solid #60a5fa !important;
+}
+section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="primary"] p {
+    color: #fff !important;
+}
 
 /* ══ PUSH CONTENT DOWN so fixed header doesn't cover it ══ */
 .block-container {
-    padding-top: 100px !important;   /* navbar(50) + menubar(44) + gap */
+    padding-top: 106px !important;   /* navbar(50) + menubar(44) + gap(12) */
     padding-left: 1rem !important;
     padding-right: 1rem !important;
     padding-bottom: 2rem !important;
@@ -111,8 +144,8 @@ html,body,
 }
 @media (max-width:600px) {
     .block-container { padding-left:.5rem !important; padding-right:.5rem !important; }
-    #fixed-header .nb-title { display:none; }
-    #fixed-header .nb-trip  { max-width:100px; }
+    .navbar-wrap .nb-title { display:none; }
+    .navbar-wrap .nb-trip  { max-width:100px; }
 }
 
 /* ══ STREAMLIT BUTTON (non-nav) ══ */
@@ -341,22 +374,16 @@ name_str   = me if me else "ล็อกอิน"
 green_part = f'<span class="nb-badge-g">🟢 {len(online_users)}</span>' if online_users else ""
 red_part   = f'<span class="nb-badge-r">🔔 {notif_count}</span>' if notif_count > 0 else ""
 
-cur_menu = st.session_state["menu"]
 MENUS = [
-    ("🏠","หลัก",   "home"),
-    ("🗓️","จัดการ", "manage"),
-    ("💬","แชท",    "chat"),
-    ("👤","บัญชี",  "account"),
+    ("🏠", "หลัก",   "home"),
+    ("🗓️", "จัดการ", "manage"),
+    ("💬", "แชท",    "chat"),
+    ("👤", "บัญชี",  "account"),
 ]
 
-menu_items_html = ""
-for icon, label, key in MENUS:
-    badge = f" 🔴{notif_count}" if key == "chat" and notif_count > 0 else ""
-    active_cls = "active" if cur_menu == key else ""
-    menu_items_html += f'<div class="mb-item {active_cls}" onclick="setMenu(\'{key}\')">{icon} {label}{badge}</div>'
-
+# ── Navbar HTML ──────────────────────────────────────────────
 st.markdown(f"""
-<div id="fixed-header">
+<div class="navbar-wrap">
   <div class="navbar">
     <span class="nb-icon">✈️</span>
     <span class="nb-title">Trip Splitter</span>
@@ -366,135 +393,20 @@ st.markdown(f"""
     <div class="nb-avatar">{av_char}</div>
     <span class="nb-name">{name_str}</span>
   </div>
-  <div class="menubar">{menu_items_html}</div>
 </div>
-
-<script>
-function setMenu(key) {{
-    // Find all Streamlit buttons with matching key pattern and click the right one
-    var btns = window.parent.document.querySelectorAll('button[data-testid="baseButton-secondary"], button[data-testid="baseButton-primary"]');
-    btns.forEach(function(btn) {{
-        if (btn.innerText && btn.innerText.trim().startsWith(
-            key === 'home'    ? '🏠' :
-            key === 'manage'  ? '🗓' :
-            key === 'chat'    ? '💬' :
-            key === 'account' ? '👤' : '')) {{
-            btn.click();
-        }}
-    }});
-}}
-
-// Move fixed-header outside Streamlit's scroll container
-(function() {{
-    var el = document.getElementById('fixed-header');
-    if (!el) return;
-    // Move to top of body so it's truly fixed
-    var body = window.parent.document.body;
-    var existing = window.parent.document.getElementById('fixed-header-portal');
-    if (existing) existing.remove();
-    var portal = window.parent.document.createElement('div');
-    portal.id = 'fixed-header-portal';
-    portal.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
-    portal.innerHTML = el.outerHTML;
-
-    // Copy styles
-    var styleEl = window.parent.document.getElementById('trip-header-styles');
-    if (!styleEl) {{
-        styleEl = window.parent.document.createElement('style');
-        styleEl.id = 'trip-header-styles';
-        styleEl.textContent = `
-            #fixed-header-portal .navbar {{
-                background:#1d4ed8; display:flex; align-items:center;
-                height:50px; padding:0 12px; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,.3);
-            }}
-            #fixed-header-portal .navbar * {{ color:#fff !important; }}
-            #fixed-header-portal .nb-icon  {{ font-size:20px; flex-shrink:0; }}
-            #fixed-header-portal .nb-title {{ font-weight:800; font-size:15px; white-space:nowrap; flex-shrink:0; }}
-            #fixed-header-portal .nb-trip  {{
-                background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35);
-                border-radius:20px; padding:2px 10px; font-size:12px; font-weight:600;
-                max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
-            }}
-            #fixed-header-portal .nb-spacer {{ flex:1; }}
-            #fixed-header-portal .nb-badge-g {{
-                background:#16a34a; border-radius:20px;
-                padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
-            }}
-            #fixed-header-portal .nb-badge-r {{
-                background:#dc2626; border-radius:20px;
-                padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
-            }}
-            #fixed-header-portal .nb-avatar {{
-                width:28px; height:28px; border-radius:50%;
-                background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.5);
-                display:flex; align-items:center; justify-content:center;
-                font-weight:800; font-size:13px; flex-shrink:0;
-            }}
-            #fixed-header-portal .nb-name {{
-                font-size:12px; font-weight:600; color:#fff !important;
-                max-width:65px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
-            }}
-            #fixed-header-portal .menubar {{
-                background:#1e3a8a; display:flex; height:44px;
-                border-bottom:3px solid #1d4ed8;
-            }}
-            #fixed-header-portal .mb-item {{
-                flex:1; display:flex; align-items:center; justify-content:center;
-                font-size:13px; font-weight:700; cursor:pointer;
-                color:#93c5fd !important; border:none; background:transparent;
-                border-bottom:3px solid transparent; margin-bottom:-3px;
-                white-space:nowrap; padding:0 2px; transition:background .15s,color .15s;
-                -webkit-tap-highlight-color:transparent;
-            }}
-            #fixed-header-portal .mb-item:hover {{ background:rgba(255,255,255,.1); color:#fff !important; }}
-            #fixed-header-portal .mb-item.active {{ color:#fff !important; border-bottom:3px solid #60a5fa; background:rgba(255,255,255,.1); }}
-            @media(max-width:600px) {{
-                #fixed-header-portal .nb-title {{ display:none; }}
-                #fixed-header-portal .nb-trip  {{ max-width:90px; }}
-                #fixed-header-portal .mb-item  {{ font-size:11px; }}
-            }}
-        `;
-        window.parent.document.head.appendChild(styleEl);
-    }}
-
-    // Wire up click handlers
-    portal.querySelectorAll('.mb-item').forEach(function(item) {{
-        item.addEventListener('click', function() {{
-            var key = item.getAttribute('onclick').match(/setMenu\('(.+?)'\)/)?.[1];
-            if (!key) return;
-            var emoji = key === 'home' ? '🏠' : key === 'manage' ? '🗓' : key === 'chat' ? '💬' : '👤';
-            var allBtns = window.parent.document.querySelectorAll('button');
-            allBtns.forEach(function(btn) {{
-                var txt = btn.innerText || btn.textContent || '';
-                if (txt.trim().startsWith(emoji)) btn.click();
-            }});
-        }});
-    }});
-
-    body.insertBefore(portal, body.firstChild);
-    el.style.display = 'none';
-}})();
-</script>
 """, unsafe_allow_html=True)
 
-# Streamlit nav buttons (hidden visually, triggered by JS)
+# ── Menu bar — Streamlit buttons styled as fixed menubar ─────
+cur_menu = st.session_state["menu"]
 nav_cols = st.columns(len(MENUS))
 for col, (icon, label, key) in zip(nav_cols, MENUS):
-    badge = f" 🔴{notif_count}" if key == "chat" and notif_count > 0 else ""
-    active = st.session_state["menu"] == key
+    badge = f" {notif_count}🔴" if key == "chat" and notif_count > 0 else ""
+    active = cur_menu == key
     if col.button(f"{icon} {label}{badge}", key=f"nav_{key}",
-                  type="primary" if active else "secondary", use_container_width=True):
-        st.session_state["menu"] = key; st.rerun()
-
-# Hide the Streamlit nav buttons visually (they still function as click targets)
-st.markdown("""<style>
-[data-testid="stHorizontalBlock"]:first-of-type { 
-    visibility: hidden !important; 
-    height: 0px !important; 
-    overflow: hidden !important;
-    margin: 0 !important; padding: 0 !important;
-}
-</style>""", unsafe_allow_html=True)
+                  type="primary" if active else "secondary",
+                  use_container_width=True):
+        st.session_state["menu"] = key
+        st.rerun()
 
 menu = st.session_state["menu"]
 
