@@ -5,6 +5,7 @@ import io
 from PIL import Image
 import time
 import urllib.parse
+import base64
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
@@ -91,81 +92,74 @@ html,body,
     background: #1d4ed8;
     display: flex; align-items: center;
     height: 50px; padding: 0 12px; gap: 8px;
-    padding-right: 178px;   /* [FIX v5] เว้นที่ให้ปุ่มโปรไฟล์ที่ลอยทับอยู่ */
+    padding-right: 172px;   /* [FIX v5] เว้นที่ให้ปุ่มโปรไฟล์ที่ลอยทับอยู่ */
     box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
 
-/* ══ [FIX v5] ปุ่มโปรไฟล์มุมขวาบน (แทนเมนู "บัญชี" เดิม) ══
-   เป็น st.button จริง แต่ลอยทับ navbar ด้วย position:fixed
-   วงกลม avatar = ::before ที่ดึงตัวอักษรจาก CSS var --nb-av
-   จุดเขียวออนไลน์ = ::after ที่ดึงสีจาก CSS var --nb-dot
-   (ทั้งสองค่าถูกฉีดใหม่ทุก rerun จากฝั่ง Python) */
+/* ══ [FIX v5/v6] ปุ่มโปรไฟล์มุมขวาบน (แทนเมนู "บัญชี" เดิม) ══
+   [FIX v6] ใช้ selector แบบ descendant (ไม่ใช่ "> button") เพราะถ้าใส่ help=
+   ให้ st.button, Streamlit จะห่อปุ่มด้วย tooltip wrapper อีกชั้น → "> button"
+   หลุด match → ปุ่มกลับไปใช้สีส้ม default ของ Streamlit
+   สี / อักษรย่อ / รูปโปรไฟล์ ส่งเข้ามาทาง CSS variable จากฝั่ง Python */
 div.st-key-userbtn {
     position: fixed !important;
     top: 8px !important;
     right: 12px !important;
     left: auto !important;
     width: auto !important;
+    display: inline-flex !important;
     z-index: 2147483647 !important;
     margin: 0 !important; padding: 0 !important;
 }
-div.st-key-userbtn .stButton { margin: 0 !important; }
-div.st-key-userbtn .stButton > button {
+div.st-key-userbtn > div,
+div.st-key-userbtn [data-testid="stElementContainer"],
+div.st-key-userbtn .stButton { width: auto !important; margin: 0 !important; }
+
+div.st-key-userbtn button {
     position: relative !important;
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center !important;
-    background: rgba(255,255,255,.16) !important;
-    border: 1.5px solid rgba(255,255,255,.42) !important;
+    width: auto !important;          /* [FIX v6] พอดีตัวอักษร ไม่ยืดเต็มกรอบ */
+    min-width: 0 !important;
+    max-width: 150px !important;
+    height: 32px !important;
+    padding: 0 11px 0 3px !important;
+    gap: 0 !important;
+    border-radius: 20px !important;
+    background: var(--nb-main, #f97316) !important;
+    border: 1.5px solid var(--nb-line, #fdba74) !important;
     color: #fff !important;
-    border-radius: 22px !important;
-    height: 34px !important;
-    max-width: 166px !important;
-    padding: 0 14px 0 4px !important;
     font-size: 12.5px !important;
     font-weight: 700 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
-    transition: background .15s !important;
+    transition: filter .15s !important;
 }
-div.st-key-userbtn .stButton > button * { color: #fff !important; }
-div.st-key-userbtn .stButton > button p {
+div.st-key-userbtn button * { color: #fff !important; }
+div.st-key-userbtn button p {
+    margin: 0 !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-    margin: 0 !important;
 }
-div.st-key-userbtn .stButton > button::before {
+/* วงกลม avatar — ใช้รูปถ้ามี (--nb-img) ไม่มีก็ใช้อักษรตัวแรก (--nb-av) */
+div.st-key-userbtn button::before {
     content: var(--nb-av, "?");
     flex-shrink: 0;
     display: inline-flex; align-items: center; justify-content: center;
-    width: 25px; height: 25px; border-radius: 50%;
-    background: rgba(255,255,255,.3);
-    border: 1.5px solid rgba(255,255,255,.6);
-    margin-right: 8px;
-    font-size: 12px; font-weight: 800; line-height: 1;
+    width: 24px; height: 24px; border-radius: 50%;
+    margin-right: 7px;
+    background-color: rgba(255,255,255,.28);
+    background-image: var(--nb-img, none);
+    background-size: cover;
+    background-position: center;
+    border: 1.5px solid rgba(255,255,255,.65);
+    font-size: 11.5px; font-weight: 800; line-height: 1;
 }
-div.st-key-userbtn .stButton > button::after {
-    content: ""; position: absolute;
-    left: 22px; bottom: 5px;
-    width: 9px; height: 9px; border-radius: 50%;
-    background: var(--nb-dot, transparent);
-    border: 1.5px solid #1d4ed8;
-}
-div.st-key-userbtn .stButton > button:hover {
-    background: rgba(255,255,255,.32) !important;
-    border-color: rgba(255,255,255,.75) !important;
-}
-/* หน้า "บัญชี" กำลังเปิดอยู่ → ปุ่มเป็นสีขาวทึบให้รู้ว่า active */
-div.st-key-userbtn .stButton > button[kind="primary"] {
-    background: #fff !important;
-    border-color: #fff !important;
-}
-div.st-key-userbtn .stButton > button[kind="primary"],
-div.st-key-userbtn .stButton > button[kind="primary"] * {
-    color: #1d4ed8 !important;
-}
-div.st-key-userbtn .stButton > button[kind="primary"]::before {
-    background: #1d4ed8; border-color: #1d4ed8; color: #fff;
+div.st-key-userbtn button:hover { filter: brightness(1.12) !important; }
+/* กำลังเปิดหน้าบัญชีอยู่ → ใส่ขอบขาวรอบนอกให้รู้ว่า active */
+div.st-key-userbtn button[kind="primary"] {
+    box-shadow: 0 0 0 2px #fff !important;
 }
 .navbar-wrap .navbar * { color: #fff !important; }
 .navbar-wrap .nb-icon  { font-size: 20px; flex-shrink:0; }
@@ -258,8 +252,8 @@ div.st-key-menubar .stButton > button[kind="primary"] p {
     }
     .navbar-wrap .nb-title { display:none; }
     .navbar-wrap .nb-trip  { max-width:100px; }
-    .navbar-wrap .navbar   { padding-right:126px; }        /* [FIX v5] */
-    div.st-key-userbtn .stButton > button { max-width:114px !important; }
+    .navbar-wrap .navbar   { padding-right:124px; }        /* [FIX v5] */
+    div.st-key-userbtn button { max-width:104px !important; }
 }
 
 /* ══ STREAMLIT BUTTON (non-nav) ══ */
@@ -419,7 +413,7 @@ def init_db():
         to_user TEXT, from_user TEXT, message TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         is_auto INTEGER DEFAULT 0, is_read INTEGER DEFAULT 0)''')
-    for col, dtype in [('promptpay','TEXT'),('bank_name','TEXT'),('bank_account','TEXT')]:
+    for col, dtype in [('promptpay','TEXT'),('bank_name','TEXT'),('bank_account','TEXT'),('avatar_blob','BLOB')]:
         try: conn.execute(f"ALTER TABLE all_users ADD COLUMN {col} {dtype}")
         except: pass
     try: conn.execute("ALTER TABLE trips ADD COLUMN trip_date TEXT")
@@ -435,6 +429,63 @@ def compress_image(f):
     if img.mode in ("RGBA","P"): img = img.convert("RGB")
     img.thumbnail((800,800)); buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=70); return buf.getvalue()
+
+# [FIX v6] ── รูปโปรไฟล์ ────────────────────────────────────────
+def compress_avatar(f):
+    """ครอปเป็นสี่เหลี่ยมจัตุรัสตรงกลางแล้วย่อเหลือ 160px — ให้ base64 สั้นพอ
+    ที่จะยัดลง CSS variable ของปุ่มบน navbar ได้"""
+    if f is None: return None
+    img = Image.open(f)
+    if img.mode in ("RGBA","P","LA"): img = img.convert("RGB")
+    w, h = img.size
+    side = min(w, h)
+    img = img.crop(((w-side)//2, (h-side)//2, (w+side)//2, (h+side)//2))
+    img = img.resize((160,160), Image.LANCZOS)
+    buf = io.BytesIO(); img.save(buf, format="JPEG", quality=72)
+    return buf.getvalue()
+
+def avatar_uri(blob):
+    if not blob: return None
+    return "data:image/jpeg;base64," + base64.b64encode(blob).decode()
+
+def avatar_html(name, blob=None, size=32, font=12, bg="#1d4ed8"):
+    """คืน <div> วงกลมเดียวแบบบรรทัดเดียว — ถ้ามีรูปใช้รูป ถ้าไม่มีใช้อักษรตัวแรก"""
+    uri = avatar_uri(blob)
+    if uri:
+        fill = f"background-image:url({uri});background-size:cover;background-position:center;"
+        ch = ""
+    else:
+        fill = f"background:{bg};"
+        ch = (name[0].upper() if name else "?")
+    return (f'<div style="width:{size}px;height:{size}px;border-radius:50%;{fill}'
+            f'flex-shrink:0;display:flex;align-items:center;justify-content:center;'
+            f'color:#fff;font-weight:700;font-size:{font}px;">{ch}</div>')
+
+# [FIX v6] ── เปลี่ยนชื่อผู้ใช้ ───────────────────────────────────
+def rename_user(old, new):
+    """ชื่อผู้ใช้ถูกเก็บเป็น TEXT กระจายอยู่หลายตาราง (ไม่ได้ใช้ user_id)
+    จึงต้องไล่แก้ให้ครบทุกที่ ไม่งั้นบิล/แชท/ยอดหนี้เดิมจะกำพร้า"""
+    if not new or new == old: return False, "ชื่อไม่เปลี่ยนแปลง"
+    c = db()
+    if c.execute("SELECT 1 FROM all_users WHERE name=?", (new,)).fetchone():
+        c.close(); return False, "มีคนใช้ชื่อนี้แล้ว"
+    c.execute("UPDATE all_users     SET name=?        WHERE name=?",        (new, old))
+    c.execute("UPDATE members       SET name=?        WHERE name=?",        (new, old))
+    c.execute("UPDATE expenses      SET payer_name=?  WHERE payer_name=?",  (new, old))
+    c.execute("UPDATE settlements   SET debtor=?      WHERE debtor=?",      (new, old))
+    c.execute("UPDATE settlements   SET creditor=?    WHERE creditor=?",    (new, old))
+    c.execute("UPDATE notifications SET to_user=?     WHERE to_user=?",     (new, old))
+    c.execute("UPDATE notifications SET from_user=?   WHERE from_user=?",   (new, old))
+    c.execute("DELETE FROM online_status WHERE name=?", (new,))
+    c.execute("UPDATE online_status SET name=?        WHERE name=?",        (new, old))
+    # split_members เก็บเป็น "a,b,c" → ต้องแยกแล้วประกอบใหม่ทีละแถว
+    for r in c.execute("SELECT id, split_members FROM expenses").fetchall():
+        parts = (r["split_members"] or "").split(",")
+        if old in parts:
+            c.execute("UPDATE expenses SET split_members=? WHERE id=?",
+                      (",".join(new if p == old else p for p in parts), r["id"]))
+    c.commit(); c.close()
+    return True, ""
 
 def heartbeat(u):
     if u:
@@ -460,7 +511,9 @@ online_users = online_now()
 # LOAD DATA
 # ─────────────────────────────────────────────────────────────
 conn0 = db()
-all_users = [r["name"] for r in conn0.execute("SELECT name FROM all_users").fetchall()]
+_urows    = conn0.execute("SELECT name, avatar_blob FROM all_users").fetchall()
+all_users = [r["name"] for r in _urows]
+avatars   = {r["name"]: r["avatar_blob"] for r in _urows}   # [FIX v6] รูปโปรไฟล์
 trips_df  = pd.read_sql_query("SELECT * FROM trips WHERE status=0", conn0)
 conn0.close()
 
@@ -529,17 +582,21 @@ st.markdown(navbar_html, unsafe_allow_html=True)
 # ── ปุ่มโปรไฟล์มุมขวาบน ────────────────────────────────────────
 # [FIX v5] ใช้ st.button จริง (ไม่ใช่ <a href>) เพราะลิงก์ HTML จะทำให้หน้า
 #   reload ทั้งหน้า → session_state หาย → ผู้ใช้หลุดล็อกอินทันที
-#   วงกลม avatar สร้างด้วย CSS ::before โดยส่งตัวอักษรผ่าน CSS variable
-_av = av_char.replace('"', "").replace("\\", "")
-_dot = "#22c55e" if me else "transparent"
-st.markdown(
-    f'<style>div.st-key-userbtn{{--nb-av:"{_av}";--nb-dot:{_dot};}}</style>',
-    unsafe_allow_html=True
-)
+# [FIX v6] สี/อักษรย่อ/รูป ส่งเข้า CSS ผ่าน variable — และห้ามใส่ help=
+#   เพราะ tooltip wrapper จะทำให้ selector ของปุ่มหลุด (ปุ่มกลายเป็นสีส้ม default)
+_my_av = avatars.get(me) if me else None
+if _my_av:
+    _av_vars = f'--nb-av:"";--nb-img:url({avatar_uri(_my_av)});'
+else:
+    _av_vars = '--nb-av:"%s";--nb-img:none;' % av_char.replace('"', "").replace("\\", "")
+# ล็อกอินแล้ว = เขียว / ยังไม่ล็อกอิน = ส้ม (ให้สะดุดตาว่ายังต้องล็อกอิน)
+_col_vars = "--nb-main:#16a34a;--nb-line:#4ade80;" if me else "--nb-main:#f97316;--nb-line:#fdba74;"
+st.markdown(f"<style>div.st-key-userbtn{{{_av_vars}{_col_vars}}}</style>",
+            unsafe_allow_html=True)
+
 with st.container(key="userbtn"):
     if st.button(name_str, key="btn_user",
-                 type="primary" if cur_menu == "account" else "secondary",
-                 help="โปรไฟล์ / บัญชีของฉัน"):
+                 type="primary" if cur_menu == "account" else "secondary"):
         st.session_state["menu"] = "account"
         st.rerun()
 
@@ -802,12 +859,12 @@ elif menu == "manage":
                         bdg=f'<span class="fb-badge">{nc3}</span>' if nc3>0 else ""
                         you=" (คุณ)" if mem==me else ""
                         mc1,mc2=st.columns([5,1])
-                        mc1.markdown(f"""<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #dbeafe;">
-                          <div style="width:34px;height:34px;border-radius:50%;background:#1d4ed8;flex-shrink:0;
-                                      display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;">{mem[0].upper()}</div>
-                          <div><div style="font-weight:600;font-size:14px;color:#000;">{dot} {mem}{you}{bdg}</div>
-                          <div style="font-size:12px;color:#374151;">{'ออนไลน์' if ion else 'ออฟไลน์'}</div></div>
-                        </div>""", unsafe_allow_html=True)
+                        mc1.markdown(
+                            '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #dbeafe;">'
+                            + avatar_html(mem, avatars.get(mem), size=34, font=13)   # [FIX v6] รูปโปรไฟล์
+                            + f'<div><div style="font-weight:600;font-size:14px;color:#000;">{dot} {mem}{you}{bdg}</div>'
+                            + f'<div style="font-size:12px;color:#374151;">{"ออนไลน์" if ion else "ออฟไลน์"}</div></div></div>',
+                            unsafe_allow_html=True)
                         if mc2.button("ออก", key=f"rm_{mem}"):
                             c.execute("DELETE FROM members WHERE trip_id=? AND name=?",(trip_id,mem)); c.commit()
                             st.toast(f"ถอด {mem}"); time.sleep(0.5); st.rerun()
@@ -1019,14 +1076,43 @@ elif menu == "account":
                         except: st.error("❌ ชื่อมีแล้ว")
                     else: st.error("⚠️ กรอกชื่อก่อน")
         else:
-            st.markdown(f"""<div class="card" style="display:flex;align-items:center;gap:14px;padding:16px;">
-              <div style="width:56px;height:56px;border-radius:50%;background:#1d4ed8;flex-shrink:0;
-                          display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:24px;">{me[0].upper()}</div>
-              <div><div style="font-weight:800;font-size:17px;color:#000;">{me}</div>
-              <div style="font-size:13px;color:#16a34a;font-weight:600;">🟢 ออนไลน์อยู่</div></div>
-            </div>""", unsafe_allow_html=True)
+            # [FIX v6] การ์ดโปรไฟล์ — โชว์รูปจริงถ้าอัปโหลดไว้
+            st.markdown(
+                '<div class="card" style="display:flex;align-items:center;gap:14px;padding:16px;">'
+                + avatar_html(me, avatars.get(me), size=56, font=24)
+                + f'<div><div style="font-weight:800;font-size:17px;color:#000;">{me}</div>'
+                  '<div style="font-size:13px;color:#16a34a;font-weight:600;">🟢 ออนไลน์อยู่</div></div>'
+                  '</div>',
+                unsafe_allow_html=True)
 
             c=db(); md=c.execute("SELECT * FROM all_users WHERE name=?",(me,)).fetchone(); c.close()
+
+            # ── [FIX v6] แก้ชื่อ + รูปโปรไฟล์ ──────────────────
+            st.markdown('<div class="section-head">👤 แก้ไขโปรไฟล์</div>', unsafe_allow_html=True)
+            with st.form("edit_profile"):
+                new_name = st.text_input("ชื่อที่แสดง:", value=me,
+                                         help="เปลี่ยนแล้วบิล แชท และยอดหนี้เดิมจะตามไปด้วยทั้งหมด")
+                new_pic  = st.file_uploader("🖼️ รูปโปรไฟล์:", type=['jpg','jpeg','png'])
+                del_pic  = st.checkbox("🗑️ ลบรูปโปรไฟล์ (กลับไปใช้ตัวอักษร)",
+                                       disabled=not md['avatar_blob'])
+                if st.form_submit_button("💾 บันทึกโปรไฟล์", type="primary", use_container_width=True):
+                    ok, err = True, ""
+                    # รูปก่อน — ทำกับชื่อเดิมที่ยังไม่เปลี่ยน
+                    if del_pic or new_pic:
+                        blob = None if del_pic else compress_avatar(new_pic)
+                        c=db(); c.execute("UPDATE all_users SET avatar_blob=? WHERE name=?",(blob,me)); c.commit(); c.close()
+                    nn2 = new_name.strip()
+                    if nn2 and nn2 != me:
+                        ok, err = rename_user(me, nn2)
+                        if ok:
+                            st.session_state["me"] = nn2
+                            if st.session_state.get("chat_partner") == me:
+                                st.session_state["chat_partner"] = nn2
+                    if ok:
+                        st.toast("💾 บันทึกโปรไฟล์แล้ว!"); time.sleep(0.5); st.rerun()
+                    else:
+                        st.error(f"❌ {err}")
+
             st.markdown('<div class="section-head">⚙️ ข้อมูลรับเงิน</div>', unsafe_allow_html=True)
             with st.form("ep"):
                 epp=st.text_input("📱 พร้อมเพย์:",value=md['promptpay'] or "",placeholder="เบอร์โทร / เลขบัตร 13 หลัก")
@@ -1048,10 +1134,11 @@ elif menu == "account":
         if all_users:
             for u5 in all_users:
                 ion3=u5 in online_users; dot3="🟢" if ion3 else "⚪"; you3=" (คุณ)" if u5==me else ""
-                st.markdown(f"""<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #dbeafe;">
-                  <div style="width:32px;height:32px;border-radius:50%;background:{'#1d4ed8' if ion3 else '#9ca3af'};flex-shrink:0;
-                              display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;">{u5[0].upper()}</div>
-                  <div><div style="font-weight:600;font-size:14px;color:#000;">{u5}{you3}</div>
-                  <div style="font-size:12px;color:#374151;">{dot3} {'ออนไลน์' if ion3 else 'ออฟไลน์'}</div></div>
-                </div>""", unsafe_allow_html=True)
+                st.markdown(
+                    '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #dbeafe;">'
+                    + avatar_html(u5, avatars.get(u5), size=32, font=12,            # [FIX v6] รูปโปรไฟล์
+                                  bg="#1d4ed8" if ion3 else "#9ca3af")
+                    + f'<div><div style="font-weight:600;font-size:14px;color:#000;">{u5}{you3}</div>'
+                    + f'<div style="font-size:12px;color:#374151;">{dot3} {"ออนไลน์" if ion3 else "ออฟไลน์"}</div></div></div>',
+                    unsafe_allow_html=True)
         else: st.caption("ยังไม่มีสมาชิก")
