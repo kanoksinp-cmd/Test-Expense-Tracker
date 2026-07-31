@@ -21,7 +21,21 @@ st_autorefresh(interval=1000, limit=None, key="live_refresh")
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* ในนี้เป็นพื้นที่ CSS ใช้ /* ... */ ได้ แต่ห้ามใช้เส้น ═ ให้ใช้ = แทน */
+/* ปรับแต่งปุ่ม Avatar โปรไฟล์ตรง Navbar */
+div[data-testid="stHorizontalBlock"] button[key="btn_account_profile"] {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 20px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 4px 12px !important;
+}
+
+div[data-testid="stHorizontalBlock"] button[key="btn_account_profile"]:hover {
+    background-color: rgba(255, 255, 255, 0.35) !important;
+    border-color: #ffffff !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
