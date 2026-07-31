@@ -687,17 +687,24 @@ elif menu == "manage":
             with right2:
                 st.markdown('<div class="section-head">➕ เพิ่มสมาชิก</div>', unsafe_allow_html=True)
                 if avail:
-                    # Checkbox สำหรับเลือกสมาชิกทั้งหมดในครั้งเดียว
-                    select_all = st.checkbox("☑️ เลือกทั้งหมด", key="chk_select_all_mems")
+                    # ฟังก์ชั่น Callback สำหรับอัปเดตรายการที่เลือกเมื่อกดติ๊ก Checkbox
+                    def toggle_select_all():
+                        if st.session_state.get("chk_select_all_mems"):
+                            st.session_state["ms_add_mems"] = avail.copy()
+                        else:
+                            st.session_state["ms_add_mems"] = []
+
+                    # Checkbox พร้อมผูกการทำงานเข้ากับ on_change Callback
+                    st.checkbox(
+                        "☑️ เลือกทั้งหมด", 
+                        key="chk_select_all_mems", 
+                        on_change=toggle_select_all
+                    )
                     
-                    # ถ้าติ๊กเลือกทั้งหมด ค่าเริ่มต้นใน multiselect จะใส่รายชื่อทั้งหมด
-                    default_selected = avail if select_all else []
-                    
-                    # Multiselect ให้ติ๊กเลือก/ลบชื่อได้ทีละหลายคน
+                    # Multiselect อ่านและอัปเดตค่าผ่าน session_state ล่าสุด
                     selected_mems = st.multiselect(
                         "เลือกเพื่อน:",
                         options=avail,
-                        default=default_selected,
                         key="ms_add_mems",
                         placeholder="เลือกเพื่อนที่ต้องการเพิ่ม..."
                     )
@@ -705,11 +712,14 @@ elif menu == "manage":
                     if st.button("➕ เพิ่มเข้า Event", type="primary", use_container_width=True):
                         if selected_mems:
                             c = db()
-                            # บันทึกเพื่อนทุกคนที่ถูกเลือกเข้า Database
                             for su in selected_mems:
                                 c.execute("INSERT INTO members (trip_id, name) VALUES (?, ?)", (trip_id, su))
                             c.commit()
                             c.close()
+                            
+                            # ล้างค่าใน session_state หลังบันทึกเสร็จ
+                            st.session_state["chk_select_all_mems"] = False
+                            st.session_state["ms_add_mems"] = []
                             
                             st.toast(f"เพิ่ม {len(selected_mems)} คนเข้า Event เรียบร้อย!")
                             time.sleep(0.5)
