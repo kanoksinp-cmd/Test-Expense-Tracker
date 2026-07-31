@@ -636,15 +636,21 @@ elif menu == "manage":
         with right:
             st.markdown('<div class="section-head">🗺️ เลือก Event</div>', unsafe_allow_html=True)
             if not trips_df.empty:
-                for _,row in trips_df.iterrows():
-                    tid2=int(row["id"]); sel=(tid2==trip_id)
-                    bg3="#eff6ff" if sel else "#fff"; brd3="border:2px solid #1d4ed8;" if sel else "border:1.5px solid #bfdbfe;"
-                    chk="✅ " if sel else ""
-                    st.markdown(f'<div style="{bg3};{brd3}border-radius:10px;padding:12px;margin-bottom:6px;"><span style="font-weight:700;font-size:14px;">{chk}✈️ {row["disp"]}</span></div>',unsafe_allow_html=True)
-                    if not sel:
-                        if st.button("เลือก", key=f"sel_{tid2}", use_container_width=True):
-                            st.session_state["trip_id"]=tid2; st.rerun()
-            else: st.info("ยังไม่มี Event")
+                for _, row in trips_df.iterrows():
+                    tid2 = int(row["id"])
+                    sel = (tid2 == trip_id)
+                    
+                    # กำหนด Label และ Type ตามสถานะการเลือก
+                    chk = "✅ " if sel else ""
+                    btn_label = f"{chk}✈️ {row['disp']}"
+                    btn_type = "primary" if sel else "secondary"
+                    
+                    # เมื่อกดปุ่มชื่อ Event
+                    if st.button(btn_label, key=f"sel_ev_{tid2}", type=btn_type, use_container_width=True):
+                        st.session_state["trip_id"] = tid2
+                        st.rerun()
+            else:
+                st.info("ยังไม่มี Event")
 
     # ── TAB: สมาชิก ─────────────────────────────────────
     with t_member:
