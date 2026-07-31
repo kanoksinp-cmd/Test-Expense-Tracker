@@ -1,0 +1,16 @@
+# .streamlit/config.toml
+[client]
+# "minimal" ซ่อน toolbar มุมขวาบนทั้งหมด ("viewer" ยังโชว์เมนู hamburger อยู่)
+toolbarMode = "minimal"
+# false = ซ่อนรายละเอียด error จากผู้ใช้ทั่วไป (ดู log ได้ที่ Manage app)
+showErrorDetails = false
+
+[server]
+enableCORS = false
+# เปิดไว้ — แอปนี้เก็บเลขบัญชีธนาคารและมีการอัปโหลดไฟล์
+enableXsrfProtection = true
+headless = true
+maxUploadSize = 8
+
+[theme]
+base = "light"
