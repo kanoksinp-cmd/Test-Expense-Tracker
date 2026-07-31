@@ -21,8 +21,7 @@ st_autorefresh(interval=1000, limit=None, key="live_refresh")
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* == HIDE STREAMLIT CHROME == */
-/* หรือใส่ CSS ของคุณตรงนี้ */
+/* ในนี้เป็นพื้นที่ CSS ใช้ /* ... */ ได้ แต่ห้ามใช้เส้น ═ ให้ใช้ = แทน */
 </style>
 """, unsafe_allow_html=True)
 
