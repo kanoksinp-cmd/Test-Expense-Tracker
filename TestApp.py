@@ -52,8 +52,15 @@ html,body,
 /* ══ NAVBAR (fixed at top) ══ */
 .navbar-wrap {
     position: fixed;
-    top: 0; left: 0; right: 0; z-index: 9999;
+    top: 2.8rem; /* เปลี่ยนจาก 0 เป็น 2.8rem หรือ 45px */
+    left: 0; 
+    right: 0; 
+    z-index: 999; /* ลด z-index ลงมาเล็กน้อย */
     font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+/* เว้นพื้นที่ด้านบนของหน้าเว็บ ไม่ให้เนื้อหาหลักไหลมาจุกทับ Navbar */
+.main .block-container {
+    padding-top: 5rem !important;
 }
 .navbar-wrap .navbar {
     background: #1d4ed8;
@@ -386,6 +393,11 @@ MENUS = [
 ]
 
 # ── Navbar HTML ──────────────────────────────────────────────
+# กำหนดค่าเริ่มต้นเพื่อป้องกันค่านิล/ว่างเปล่า
+av_char = st.session_state.get("user_avatar", "?")
+name_str = st.session_state.get("user_name", "ล็อกอิน")
+
+# Render HTML
 st.markdown(f"""
 <div class="navbar-wrap">
   <div class="navbar">
