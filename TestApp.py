@@ -21,7 +21,7 @@ st_autorefresh(interval=1000, limit=None, key="live_refresh")
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* HIDE THE "RUNNING" STATUS WIDGET (top-right spinner/dot that Streamlit shows) */
+/* HIDE THE "RUNNING" STATUS WIDGET */
 div[data-testid="stStatusWidget"] {
     visibility: hidden;
 }
