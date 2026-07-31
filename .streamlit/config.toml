@@ -1,14 +1,12 @@
 [client]
-# ล็อกโหมดแถบเมนูด้านบน ไม่ให้ Streamlit หุบอัตโนมัติเมื่อรันบน Codespaces/Cloud
-# ตัวเลือก: "auto" (ค่าเริ่มต้น จะหุบเมื่อตรวจว่าเป็น production), "developer", "viewer", "minimal"
-toolbarMode = "viewer"
-
-# ปิดข้อความแจ้งเตือน error แบบละเอียด (ไม่เกี่ยวกับเมนู แต่กันซ้อนกับ header)
-showErrorDetails = true
+# "minimal" = ซ่อน toolbar มุมขวาบนทั้งหมด ("viewer" ยังโชว์เมนู hamburger อยู่)
+toolbarMode = "minimal"
+# false = ซ่อนรายละเอียด error (ตรงกับคอมเมนต์เดิม — ของเดิมตั้ง true คือ "เปิด")
+showErrorDetails = false
 
 [server]
 enableCORS = false
-enableXsrfProtection = false
+enableXsrfProtection = true
 headless = true
 
 [theme]
