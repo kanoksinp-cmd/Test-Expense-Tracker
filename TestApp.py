@@ -21,23 +21,9 @@ st_autorefresh(interval=1000, limit=None, key="live_refresh")
 # ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* ปรับแต่งปุ่ม Avatar โปรไฟล์ตรง Navbar */
-div[data-testid="stHorizontalBlock"] button[key="btn_account_profile"] {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.4) !important;
-    border-radius: 20px !important;
-    font-weight: 700 !important;
-    font-size: 13px !important;
-    padding: 4px 12px !important;
-}
-
-div[data-testid="stHorizontalBlock"] button[key="btn_account_profile"]:hover {
-    background-color: rgba(255, 255, 255, 0.35) !important;
-    border-color: #ffffff !important;
-}
-</style>
-""", unsafe_allow_html=True)
+/* ══ LIGHT MODE FORCE ══ */
+:root { color-scheme: light only !important; }
+html, body { color-scheme: light !important; background: #dbeafe !important; }
 
 /* ══ HIDE STREAMLIT CHROME ══ */
 [data-testid="collapsedControl"],[data-testid="stSidebar"],
@@ -361,7 +347,7 @@ else:
     av_char = "👤"
     user_disp_name = "เข้าสู่ระบบ"
 
-# ── 2. render Navbar ──
+# ── 2. render Navbar (มุมขวาบนคลิกแล้วเปิดหน้า account) ──
 st.markdown(f"""
 <div class="navbar-wrap">
     <div style="display:flex; align-items:center; gap:8px;">
@@ -378,29 +364,35 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── 3. ปุ่มเปลี่ยนหน้ามุมขวาบน ──
+# ── 3. จัดการปุ่มคลิก Profile / Navbar มุมขวาบน ──
+# สร้าง Container/Columns ซ้อนตำแหน่งมุมขวาบนสำหรับดัก Event การคลิกเปลี่ยนหน้าไป 'account'
 col_nav_left, col_nav_right = st.columns([7, 3])
 with col_nav_right:
-    if st.button(f"👤 {av_char} | {user_disp_name}", key="btn_account_profile", use_container_width=True):
+    # ปุ่มเปลี่ยนหน้าไปยังบัญชีผู้ใช้
+    if st.button(f"{av_char} {user_disp_name}", key="btn_account_profile", use_container_width=True):
         st.session_state["menu"] = "account"
         st.rerun()
 
 # ── 4. Menubar ด้านล่าง (ตัดแท็บ "บัญชี" ออก เหลือ 3 แท็บ) ──
 selected_menu = st.session_state.get("menu", "home")
+
 col_m1, col_m2, col_m3 = st.columns(3)
 
 with col_m1:
-    if st.button("🏠 หลัก", key="mb_home", type=("primary" if selected_menu == "home" else "secondary"), use_container_width=True):
+    btn_style = "primary" if selected_menu == "home" else "secondary"
+    if st.button("🏠 หลัก", key="mb_home", type=btn_style, use_container_width=True):
         st.session_state["menu"] = "home"
         st.rerun()
 
 with col_m2:
-    if st.button("🗓️ จัดการ", key="mb_manage", type=("primary" if selected_menu == "manage" else "secondary"), use_container_width=True):
+    btn_style = "primary" if selected_menu == "manage" else "secondary"
+    if st.button("🗓️ จัดการ", key="mb_manage", type=btn_style, use_container_width=True):
         st.session_state["menu"] = "manage"
         st.rerun()
 
 with col_m3:
-    if st.button("💬 แชท", key="mb_chat", type=("primary" if selected_menu == "chat" else "secondary"), use_container_width=True):
+    btn_style = "primary" if selected_menu == "chat" else "secondary"
+    if st.button("💬 แชท", key="mb_chat", type=btn_style, use_container_width=True):
         st.session_state["menu"] = "chat"
         st.rerun()
 /* ปรับแต่งปุ่ม Avatar โปรไฟล์ตรง Navbar */
