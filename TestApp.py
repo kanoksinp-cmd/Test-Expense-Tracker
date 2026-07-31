@@ -91,7 +91,81 @@ html,body,
     background: #1d4ed8;
     display: flex; align-items: center;
     height: 50px; padding: 0 12px; gap: 8px;
+    padding-right: 178px;   /* [FIX v5] เว้นที่ให้ปุ่มโปรไฟล์ที่ลอยทับอยู่ */
     box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+
+/* ══ [FIX v5] ปุ่มโปรไฟล์มุมขวาบน (แทนเมนู "บัญชี" เดิม) ══
+   เป็น st.button จริง แต่ลอยทับ navbar ด้วย position:fixed
+   วงกลม avatar = ::before ที่ดึงตัวอักษรจาก CSS var --nb-av
+   จุดเขียวออนไลน์ = ::after ที่ดึงสีจาก CSS var --nb-dot
+   (ทั้งสองค่าถูกฉีดใหม่ทุก rerun จากฝั่ง Python) */
+div.st-key-userbtn {
+    position: fixed !important;
+    top: 8px !important;
+    right: 12px !important;
+    left: auto !important;
+    width: auto !important;
+    z-index: 2147483647 !important;
+    margin: 0 !important; padding: 0 !important;
+}
+div.st-key-userbtn .stButton { margin: 0 !important; }
+div.st-key-userbtn .stButton > button {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    background: rgba(255,255,255,.16) !important;
+    border: 1.5px solid rgba(255,255,255,.42) !important;
+    color: #fff !important;
+    border-radius: 22px !important;
+    height: 34px !important;
+    max-width: 166px !important;
+    padding: 0 14px 0 4px !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    transition: background .15s !important;
+}
+div.st-key-userbtn .stButton > button * { color: #fff !important; }
+div.st-key-userbtn .stButton > button p {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+}
+div.st-key-userbtn .stButton > button::before {
+    content: var(--nb-av, "?");
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 25px; height: 25px; border-radius: 50%;
+    background: rgba(255,255,255,.3);
+    border: 1.5px solid rgba(255,255,255,.6);
+    margin-right: 8px;
+    font-size: 12px; font-weight: 800; line-height: 1;
+}
+div.st-key-userbtn .stButton > button::after {
+    content: ""; position: absolute;
+    left: 22px; bottom: 5px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--nb-dot, transparent);
+    border: 1.5px solid #1d4ed8;
+}
+div.st-key-userbtn .stButton > button:hover {
+    background: rgba(255,255,255,.32) !important;
+    border-color: rgba(255,255,255,.75) !important;
+}
+/* หน้า "บัญชี" กำลังเปิดอยู่ → ปุ่มเป็นสีขาวทึบให้รู้ว่า active */
+div.st-key-userbtn .stButton > button[kind="primary"] {
+    background: #fff !important;
+    border-color: #fff !important;
+}
+div.st-key-userbtn .stButton > button[kind="primary"],
+div.st-key-userbtn .stButton > button[kind="primary"] * {
+    color: #1d4ed8 !important;
+}
+div.st-key-userbtn .stButton > button[kind="primary"]::before {
+    background: #1d4ed8; border-color: #1d4ed8; color: #fff;
 }
 .navbar-wrap .navbar * { color: #fff !important; }
 .navbar-wrap .nb-icon  { font-size: 20px; flex-shrink:0; }
@@ -184,6 +258,8 @@ div.st-key-menubar .stButton > button[kind="primary"] p {
     }
     .navbar-wrap .nb-title { display:none; }
     .navbar-wrap .nb-trip  { max-width:100px; }
+    .navbar-wrap .navbar   { padding-right:126px; }        /* [FIX v5] */
+    div.st-key-userbtn .stButton > button { max-width:114px !important; }
 }
 
 /* ══ STREAMLIT BUTTON (non-nav) ══ */
@@ -422,12 +498,14 @@ name_str   = me if me else "ล็อกอิน"
 green_part = f'<span class="nb-badge-g">🟢 {len(online_users)}</span>' if online_users else ""
 red_part   = f'<span class="nb-badge-r">🔔 {notif_count}</span>' if notif_count > 0 else ""
 
+# [FIX v5] ถอด "บัญชี" ออกจากแถบเมนู — ย้ายไปเป็นปุ่มโปรไฟล์มุมขวาบนแทน
 MENUS = [
     ("🏠", "หลัก",   "home"),
     ("🗓️", "จัดการ", "manage"),
     ("💬", "แชท",    "chat"),
-    ("👤", "บัญชี",  "account"),
 ]
+
+cur_menu = st.session_state["menu"]
 
 # ── Navbar HTML ──────────────────────────────────────────────
 # [FIX v4] ต้นเหตุจริงของ "กล่องขาวมุมขวาบน"
@@ -444,15 +522,29 @@ navbar_html = (
     f'<span class="nb-trip">✈️ {trip_lbl}</span>'
     '<span class="nb-spacer"></span>'
     f'{green_part}{red_part}'
-    f'<div class="nb-avatar">{av_char}</div>'
-    f'<span class="nb-name">{name_str}</span>'
     '</div></div>'
 )
 st.markdown(navbar_html, unsafe_allow_html=True)
 
+# ── ปุ่มโปรไฟล์มุมขวาบน ────────────────────────────────────────
+# [FIX v5] ใช้ st.button จริง (ไม่ใช่ <a href>) เพราะลิงก์ HTML จะทำให้หน้า
+#   reload ทั้งหน้า → session_state หาย → ผู้ใช้หลุดล็อกอินทันที
+#   วงกลม avatar สร้างด้วย CSS ::before โดยส่งตัวอักษรผ่าน CSS variable
+_av = av_char.replace('"', "").replace("\\", "")
+_dot = "#22c55e" if me else "transparent"
+st.markdown(
+    f'<style>div.st-key-userbtn{{--nb-av:"{_av}";--nb-dot:{_dot};}}</style>',
+    unsafe_allow_html=True
+)
+with st.container(key="userbtn"):
+    if st.button(name_str, key="btn_user",
+                 type="primary" if cur_menu == "account" else "secondary",
+                 help="โปรไฟล์ / บัญชีของฉัน"):
+        st.session_state["menu"] = "account"
+        st.rerun()
+
 # ── Menu bar — wrapped in a keyed container so CSS has a stable,
 #    version-proof hook (`.st-key-menubar`) instead of guessing DOM nesting ──
-cur_menu = st.session_state["menu"]
 with st.container(key="menubar"):
     nav_cols = st.columns(len(MENUS))
     for col, (icon, label, key) in zip(nav_cols, MENUS):
