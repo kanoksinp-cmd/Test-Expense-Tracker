@@ -7,6 +7,7 @@ import time
 import urllib.parse
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+import streamlit.components.v1 as components
 
 # ─────────────────────────────────────────────────────────────
 # CONFIG
@@ -14,9 +15,9 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="Trip Expense Splitter", layout="wide",
                    page_icon="✈️", initial_sidebar_state="collapsed")
 
-# [FIX] เดิม interval=1000 (รีรันทุก 1 วิ) ทำให้ toolbar/สปินเนอร์มุมขวาบนกะพริบ
-# และหน้าเว็บหน่วง — ปรับเป็น 3 วิ ยังพอสำหรับเกณฑ์ online 15 วินาที
-st_autorefresh(interval=3000, limit=None, key="live_refresh")
+# [FIX v2] ย้าย st_autorefresh() ไปไว้ในคอนเทนเนอร์ซ่อน (ดูท้ายบล็อก CSS)
+#          เพราะ st_autorefresh เป็น custom component → Streamlit จะ render
+#          <iframe> สีขาวจริง ๆ ลงในหน้า ซึ่งคือ "แถบขาว" ที่โผล่ด้านบน
 
 # ─────────────────────────────────────────────────────────────
 # CSS  — blue theme, black text, fixed header, mobile-ready
@@ -27,10 +28,10 @@ st.markdown("""
 :root { color-scheme: light only !important; }
 html, body { color-scheme: light !important; background: #dbeafe !important; }
 
-/* ══ [FIX] ซ่อน TOOLBAR มุมขวาบนทั้งหมด ══
-   สาเหตุของ "กล่องขาวทับ navbar" คือ Streamlit toolbar container
-   (stToolbar / stAppToolbar / stAppDeployButton / stDecoration)
-   ซึ่งเดิมไม่ได้ถูกซ่อน และมี z-index สูงกว่า navbar */
+/* ══ [FIX v2] ซ่อน TOOLBAR มุมขวาบน ══
+   ใช้แค่ display:none — ของเดิมที่ใส่ height:0/width:0 พร้อมกันทำให้ลูกที่ถูก
+   portal ออกมาหลุดตำแหน่ง กลายเป็นกล่องขาวลอยแทนที่จะหายไป
+   หมายเหตุ: CSS อย่างเดียวเอาไม่อยู่ทุก version → มี JS ลบซ้ำที่ท้ายบล็อกนี้ */
 [data-testid="stToolbar"],
 [data-testid="stToolbarActions"],
 [data-testid="stAppDeployButton"],
@@ -46,11 +47,25 @@ html, body { color-scheme: light !important; background: #dbeafe !important; }
 .stDeployButton,
 #MainMenu, header, footer {
     display: none !important;
-    visibility: hidden !important;
+}
+
+/* ══ [FIX v2] คอนเทนเนอร์ซ่อนสำหรับ component ที่ไม่มี UI ══
+   (st_autorefresh + ตัวฉีด JS) — ห้ามใช้ display:none เพราะ browser จะ
+   throttle timer ใน iframe ที่ถูกซ่อนแบบนั้น → autorefresh จะหยุดทำงาน
+   จึงใช้วิธีหลุดออกจาก layout flow + opacity 0 แทน */
+div.st-key-hidden_utils {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 1px !important; height: 1px !important;
+    overflow: hidden !important;
     opacity: 0 !important;
-    height: 0 !important;
-    width: 0 !important;
     pointer-events: none !important;
+    z-index: -1 !important;
+    margin: 0 !important; padding: 0 !important;
+}
+div.st-key-hidden_utils iframe {
+    width: 1px !important; height: 1px !important;
+    border: none !important; display: block !important;
 }
 
 /* ══ GLOBAL FONT & BG ══ */
@@ -295,6 +310,51 @@ div.st-key-menubar .stButton > button[kind="primary"] p {
 ::-webkit-scrollbar-thumb { background:#93c5fd; border-radius:4px; }
 </style>
 """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────
+# [FIX v2] HIDDEN UTILS — component ที่ไม่มี UI แต่ Streamlit บังคับ render iframe
+#   1) st_autorefresh  → iframe ขาวที่โผล่เป็นแถบด้านบน
+#   2) JS cleaner      → ลบ toolbar มุมขวาบนแบบถาวร (CSS อย่างเดียวไม่พอ
+#      เพราะ Streamlit ใส่ inline style กลับมาใหม่ทุกครั้งที่ rerun)
+# ─────────────────────────────────────────────────────────────
+CHROME_KILLER = """
+<script>
+(function () {
+  const doc = window.parent.document;
+  const SEL = [
+    '[data-testid="stToolbar"]',
+    '[data-testid="stToolbarActions"]',
+    '[data-testid="stAppDeployButton"]',
+    '[data-testid="stStatusWidget"]',
+    '[data-testid="stConnectionStatus"]',
+    '[data-testid="stMainMenu"]',
+    '[data-testid="stDecoration"]',
+    '[data-testid="stHeader"]',
+    '.stAppToolbar', '.stAppDeployButton', '.stDeployButton',
+    '#MainMenu'
+  ].join(',');
+
+  function kill() {
+    doc.querySelectorAll(SEL).forEach(function (el) {
+      if (el.style.display !== 'none') {
+        el.style.setProperty('display', 'none', 'important');
+      }
+    });
+  }
+
+  kill();
+  // rerun ทุกครั้ง Streamlit อาจสร้าง node ใหม่ → เฝ้าดูแล้วลบซ้ำ
+  new MutationObserver(kill).observe(doc.body, { childList: true, subtree: true });
+  setInterval(kill, 400);
+})();
+</script>
+"""
+
+with st.container(key="hidden_utils"):
+    # interval 3000ms — เดิม 1000ms ทำให้กะพริบและ query DB ถี่เกินจำเป็น
+    # (เกณฑ์ online คือ 15 วินาที จึงยังเหลือ margin เยอะ)
+    st_autorefresh(interval=3000, limit=None, key="live_refresh")
+    components.html(CHROME_KILLER, height=0, width=0)
 
 # ─────────────────────────────────────────────────────────────
 # DATABASE
