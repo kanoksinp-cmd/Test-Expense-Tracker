@@ -85,7 +85,7 @@ html,body,
     top: 0;
     left: 0;
     right: 0;
-    z-index: 999999;   /* [FIX] เดิม 999 — ต่ำกว่า toolbar ของ Streamlit */
+    z-index: 2147483647;   /* [FIX v3] สูงสุดเท่าที่ browser รับได้ */
     font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 .navbar-wrap .navbar {
@@ -127,7 +127,7 @@ div.st-key-menubar {
     position: fixed !important;
     top: 50px !important;
     left: 0 !important; right: 0 !important;
-    z-index: 999998 !important;   /* [FIX] เดิม 9998 */
+    z-index: 2147483646 !important;   /* [FIX v3] */
     background: #1e3a8a !important;
     padding: 0 !important; margin: 0 !important;
     border-bottom: 3px solid #60a5fa !important;
@@ -320,8 +320,12 @@ div.st-key-menubar .stButton > button[kind="primary"] p {
 CHROME_KILLER = """
 <script>
 (function () {
-  const doc = window.parent.document;
-  const SEL = [
+  var doc;
+  try { doc = window.parent.document; }
+  catch (e) { console.warn('[chrome-killer] เข้าถึง parent ไม่ได้:', e); return; }
+
+  // 1) รายการที่รู้จักชื่ออยู่แล้ว
+  var SEL = [
     '[data-testid="stToolbar"]',
     '[data-testid="stToolbarActions"]',
     '[data-testid="stAppDeployButton"]',
@@ -334,18 +338,62 @@ CHROME_KILLER = """
     '#MainMenu'
   ].join(',');
 
-  function kill() {
-    doc.querySelectorAll(SEL).forEach(function (el) {
-      if (el.style.display !== 'none') {
-        el.style.setProperty('display', 'none', 'important');
-      }
+  // เปลี่ยนเป็น true ถ้าอยากซ่อนปุ่ม "Manage app" มุมขวาล่างของ Streamlit Cloud ด้วย
+  var HIDE_MANAGE_APP = false;
+
+  var SAFE = '.navbar-wrap, .st-key-menubar, .st-key-hidden_utils';
+
+  function hide(el, why) {
+    if (el && el.style && el.style.display !== 'none') {
+      el.style.setProperty('display', 'none', 'important');
+      console.log('[chrome-killer] ซ่อน (' + why + '):', el);
+    }
+  }
+
+  function killBySelector() {
+    doc.querySelectorAll(SEL).forEach(function (el) { hide(el, 'selector'); });
+    if (HIDE_MANAGE_APP) {
+      doc.querySelectorAll('[data-testid="manage-app-button"]')
+         .forEach(function (el) { hide(el, 'manage-app'); });
+    }
+  }
+
+  // 2) กวาดตามตำแหน่ง — จับตัวที่ไม่รู้ชื่อ
+  //    เงื่อนไข: ลอย (fixed/absolute/sticky) + ชิดขอบบน + ชิดขอบขวา + ขนาดเล็ก
+  function killTopRight() {
+    var W = doc.documentElement.clientWidth;
+    doc.querySelectorAll('body *').forEach(function (el) {
+      if (el.closest(SAFE)) return;                             // ของเราเอง
+      if (el.querySelector && el.querySelector(SAFE)) return;   // เป็นพ่อของเรา
+      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
+
+      var cs = doc.defaultView.getComputedStyle(el);
+      if (['fixed', 'absolute', 'sticky'].indexOf(cs.position) === -1) return;
+
+      var r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return;
+      if (r.height > 90 || r.width > 420) return;   // ใหญ่เกิน = ไม่ใช่เป้าหมาย
+      if (r.top > 60) return;                       // ต้องติดขอบบน
+      if (r.right < W - 40) return;                 // ต้องชิดขอบขวา
+      hide(el, 'top-right sweep');
     });
   }
 
-  kill();
-  // rerun ทุกครั้ง Streamlit อาจสร้าง node ใหม่ → เฝ้าดูแล้วลบซ้ำ
-  new MutationObserver(kill).observe(doc.body, { childList: true, subtree: true });
-  setInterval(kill, 400);
+  var queued = false;
+  function run() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () {
+      queued = false;
+      killBySelector();
+      killTopRight();
+    });
+  }
+
+  run();
+  // Streamlit สร้าง node ใหม่ทุก rerun → เฝ้าดูแล้วลบซ้ำ
+  new MutationObserver(run).observe(doc.body, { childList: true, subtree: true });
+  setInterval(run, 800);
 })();
 </script>
 """
