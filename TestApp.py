@@ -365,31 +365,7 @@ with col_nav_r:
         st.session_state["menu"] = "account"
         st.rerun()
 
-# ====================================================
-# 3. แถบเมนูด้านล่าง (เหลือ 3 แท็บ: หลัก / จัดการ / แชท)
-# ====================================================
-cur_menu = st.session_state.get("menu", "home")
 
-m_col1, m_col2, m_col3 = st.columns(3)
-
-with m_col1:
-    type_home = "primary" if cur_menu == "home" else "secondary"
-    if st.button("🏠 หลัก", key="nav_btn_home", type=type_home, use_container_width=True):
-        st.session_state["menu"] = "home"
-        st.rerun()
-
-with m_col2:
-    type_manage = "primary" if cur_menu == "manage" else "secondary"
-    if st.button("🗓️ จัดการ", key="nav_btn_manage", type=type_manage, use_container_width=True):
-        st.session_state["menu"] = "manage"
-        st.rerun()
-
-with m_col3:
-    type_chat = "primary" if cur_menu == "chat" else "secondary"
-    if st.button("💬 แชท", key="nav_btn_chat", type=type_chat, use_container_width=True):
-        st.session_state["menu"] = "chat"
-        st.rerun()
-online_users = online_now()
 
 # ─────────────────────────────────────────────────────────────
 # LOAD DATA
@@ -462,18 +438,31 @@ st.markdown(f"""
 
 # ── Menu bar — wrapped in a keyed container so CSS has a stable,
 #    version-proof hook (`.st-key-menubar`) instead of guessing DOM nesting ──
-cur_menu = st.session_state["menu"]
-with st.container(key="menubar"):
-    nav_cols = st.columns(len(MENUS))
-    for col, (icon, label, key) in zip(nav_cols, MENUS):
-        badge = f" {notif_count}🔴" if key == "chat" and notif_count > 0 else ""
-        active = cur_menu == key
-        if col.button(f"{icon} {label}{badge}", key=f"nav_{key}",
-                      type="primary" if active else "secondary",
-                      use_container_width=True):
-            st.session_state["menu"] = key
-            st.rerun()
+# ====================================================
+# 3. แถบเมนูด้านล่าง (เหลือ 3 แท็บ: หลัก / จัดการ / แชท)
+# ====================================================
+cur_menu = st.session_state.get("menu", "home")
 
+m_col1, m_col2, m_col3 = st.columns(3)
+
+with m_col1:
+    type_home = "primary" if cur_menu == "home" else "secondary"
+    if st.button("🏠 หลัก", key="nav_btn_home", type=type_home, use_container_width=True):
+        st.session_state["menu"] = "home"
+        st.rerun()
+
+with m_col2:
+    type_manage = "primary" if cur_menu == "manage" else "secondary"
+    if st.button("🗓️ จัดการ", key="nav_btn_manage", type=type_manage, use_container_width=True):
+        st.session_state["menu"] = "manage"
+        st.rerun()
+
+with m_col3:
+    type_chat = "primary" if cur_menu == "chat" else "secondary"
+    if st.button("💬 แชท", key="nav_btn_chat", type=type_chat, use_container_width=True):
+        st.session_state["menu"] = "chat"
+        st.rerun()
+online_users = online_now()
 menu = st.session_state["menu"]
 
 # ═══════════════════════════════════════════════════════
