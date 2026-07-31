@@ -52,7 +52,7 @@ html,body,
 /* ══ NAVBAR (fixed at top) ══ */
 .navbar-wrap {
     position: fixed;
-    top: 2.8rem; /* เปลี่ยนจาก 0 เป็น 2.8rem หรือ 45px */
+    top: 1rem; /* เปลี่ยนจาก 0 เป็น 2.8rem หรือ 45px */
     left: 0; 
     right: 0; 
     z-index: 999; /* ลด z-index ลงมาเล็กน้อย */
@@ -60,7 +60,7 @@ html,body,
 }
 /* เว้นพื้นที่ด้านบนของหน้าเว็บ ไม่ให้เนื้อหาหลักไหลมาจุกทับ Navbar */
 .main .block-container {
-    padding-top: 1rem !important;
+    padding-top: 8rem !important;
 }
 .navbar-wrap .navbar {
     background: #1d4ed8;
