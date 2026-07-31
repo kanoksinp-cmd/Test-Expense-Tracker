@@ -925,31 +925,50 @@ elif menu == "manage":
                         on_change=toggle_select_all
                     )
 
+                    # [FIX v9] ล้างค่าค้างที่หลุดออกจาก options ไปแล้ว — จำเป็นเพราะ
+                    #   หน้าจอ refresh ทุก 3 วิและเป็นระบบหลายคน เพื่อนที่เราเลือกค้างไว้
+                    #   อาจถูกคนอื่นเพิ่มเข้า Event ไปก่อน → ค่าใน state ไม่มีใน options
+                    #   → Streamlit error. ทำตรงนี้ได้เพราะยังไม่ถึงบรรทัดที่สร้าง widget
+                    _kept = [x for x in st.session_state.get("ms_add_mems", []) if x in avail]
+                    if _kept != st.session_state.get("ms_add_mems", []):
+                        st.session_state["ms_add_mems"] = _kept
+
                     # Multiselect อ่านและอัปเดตค่าผ่าน session_state ล่าสุด
-                    selected_mems = st.multiselect(
+                    st.multiselect(
                         "เลือกเพื่อน:",
                         options=avail,
                         key="ms_add_mems",
                         placeholder="เลือกเพื่อนที่ต้องการเพิ่ม..."
                     )
 
-                    if st.button("➕ เพิ่มเข้า Event", type="primary", use_container_width=True):
-                        if selected_mems:
-                            c = db()
-                            for su in selected_mems:
-                                c.execute("INSERT INTO members (trip_id, name) VALUES (?, ?)", (trip_id, su))
-                            c.commit()
-                            c.close()
+                    # [FIX v9] ย้ายงานทั้งหมดมาไว้ใน callback
+                    #   ของเดิมเขียน st.session_state["chk_select_all_mems"] = False
+                    #   ไว้ใน body ของ if st.button(...) ซึ่งรันหลังจาก widget ถูกสร้างไปแล้ว
+                    #   → Streamlit โยน StreamlitAPIException ("cannot be modified after
+                    #   the widget ... is instantiated") เพราะห้ามเขียนทับ state ของ widget
+                    #   ที่ instantiate ไปแล้วในรอบเดียวกัน
+                    #   callback ของ on_click รัน "ก่อน" สคริปต์รอบถัดไปจะสร้าง widget
+                    #   จึงเป็นที่เดียวที่ล้างค่า widget ได้อย่างถูกต้อง
+                    def add_selected_members():
+                        sel = list(st.session_state.get("ms_add_mems", []))
+                        if not sel:
+                            st.session_state["add_mem_msg"] = ("err", "⚠️ กรุณาเลือกสมาชิกอย่างน้อย 1 คน")
+                            return
+                        c = db()
+                        for su in sel:
+                            c.execute("INSERT INTO members (trip_id, name) VALUES (?, ?)", (trip_id, su))
+                        c.commit(); c.close()
+                        st.session_state["chk_select_all_mems"] = False
+                        st.session_state["ms_add_mems"] = []
+                        st.session_state["add_mem_msg"] = ("ok", f"เพิ่ม {len(sel)} คนเข้า Event เรียบร้อย!")
 
-                            # ล้างค่าใน session_state หลังบันทึกเสร็จ
-                            st.session_state["chk_select_all_mems"] = False
-                            st.session_state["ms_add_mems"] = []
+                    st.button("➕ เพิ่มเข้า Event", type="primary",
+                              use_container_width=True, on_click=add_selected_members)
 
-                            st.toast(f"เพิ่ม {len(selected_mems)} คนเข้า Event เรียบร้อย!")
-                            time.sleep(0.5)
-                            st.rerun()
-                        else:
-                            st.error("⚠️ กรุณาเลือกสมาชิกอย่างน้อย 1 คน")
+                    # callback สั่ง rerun ให้เองอยู่แล้ว จึงมาอ่านผลลัพธ์ตรงนี้
+                    _res = st.session_state.pop("add_mem_msg", None)
+                    if _res:
+                        (st.toast if _res[0] == "ok" else st.error)(_res[1])
                 else:
                     st.info("ทุกคนอยู่ในกลุ่มแล้ว")
 
