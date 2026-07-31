@@ -49,52 +49,69 @@ html,body,
 }
 [data-testid="stMainBlockContainer"] { max-width: 100% !important; }
 
-/* ══ NAVBAR (fixed at top) ══ */
-.navbar-wrap {
-    position: fixed;
-    top: 0rem; /* เปลี่ยนจาก 0 เป็น 2.8rem หรือ 45px */
-    left: 0; 
-    right: 0; 
-    z-index: 999; /* ลด z-index ลงมาเล็กน้อย */
-    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-}
-/* เว้นพื้นที่ด้านบนของหน้าเว็บ ไม่ให้เนื้อหาหลักไหลมาจุกทับ Navbar */
-.main .block-container {
-    padding-top: 8rem !important;
-}
-.navbar-wrap .navbar {
-    background: #1d4ed8;
-    display: flex; align-items: center;
-    height: 50px; padding: 0 12px; gap: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.3);
-}
-.navbar-wrap .navbar * { color: #fff !important; }
-.navbar-wrap .nb-icon  { font-size: 20px; flex-shrink:0; }
-.navbar-wrap .nb-title { font-weight:800; font-size:15px; white-space:nowrap; flex-shrink:0; }
-.navbar-wrap .nb-trip  {
-    background: rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35);
-    border-radius:20px; padding:2px 10px; font-size:12px; font-weight:600;
-    max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
-}
-.navbar-wrap .nb-spacer { flex:1; }
-.navbar-wrap .nb-badge-g {
-    background:#16a34a; border-radius:20px;
-    padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
-}
-.navbar-wrap .nb-badge-r {
-    background:#dc2626; border-radius:20px;
-    padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
-}
-.navbar-wrap .nb-avatar {
-    width:28px; height:28px; border-radius:50%;
-    background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.5);
-    display:flex; align-items:center; justify-content:center;
-    font-weight:800; font-size:13px; flex-shrink:0;
-}
-.navbar-wrap .nb-name {
-    font-size:12px; font-weight:600;
-    max-width:65px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
-}
+# ====================================================
+# 1. เตรียมข้อมูลแบบปลอดภัย (ป้องกัน NameError)
+# ====================================================
+# เช็คผู้ใช้ปัจจุบัน
+current_user = me if 'me' in locals() else st.session_state.get("me", None)
+if current_user:
+    av_char = str(current_user)[0].upper()
+    user_disp = f"👤 [{av_char}] {current_user}"
+else:
+    user_disp = "👤 เข้าสู่ระบบ"
+
+# เช็ค Event ปัจจุบัน (ถ้าไม่มีตัวแปร cur_trip ให้ดึงจาก session หรือใช้ค่าเริ่มต้น)
+if 'cur_trip' in locals():
+    trip_name = cur_trip if cur_trip else 'เลือก Event'
+elif 'cur_trip' in globals():
+    trip_name = globals()['cur_trip'] if globals()['cur_trip'] else 'เลือก Event'
+else:
+    trip_name = st.session_state.get("cur_trip", "เลือก Event")
+
+# เช็คจำนวนผู้ใช้ออนไลน์
+online_count = len(online_users) if 'online_users' in locals() else 1
+
+# ====================================================
+# 2. Navbar ด้านบน (ย้าย บัญชี ขึ้นมุมขวาบน)
+# ====================================================
+col_nav_l, col_nav_r = st.columns([6, 4])
+
+with col_nav_l:
+    st.markdown(
+        f"### ✈️ Trip Splitter &nbsp; <span style='font-size:14px; background:rgba(255,255,255,0.2); padding:4px 10px; border-radius:12px;'>✈️ {trip_name}</span>", 
+        unsafe_allow_html=True
+    )
+
+with col_nav_r:
+    top_btn_label = f"🟢 {online_count}  |  {user_disp}"
+    if st.button(top_btn_label, key="btn_top_right_account", use_container_width=True):
+        st.session_state["menu"] = "account"
+        st.rerun()
+
+# ====================================================
+# 3. แถบเมนูด้านล่าง (3 แท็บ)
+# ====================================================
+cur_menu = st.session_state.get("menu", "home")
+
+m_col1, m_col2, m_col3 = st.columns(3)
+
+with m_col1:
+    type_home = "primary" if cur_menu == "home" else "secondary"
+    if st.button("🏠 หลัก", key="nav_btn_home", type=type_home, use_container_width=True):
+        st.session_state["menu"] = "home"
+        st.rerun()
+
+with m_col2:
+    type_manage = "primary" if cur_menu == "manage" else "secondary"
+    if st.button("🗓️ จัดการ", key="nav_btn_manage", type=type_manage, use_container_width=True):
+        st.session_state["menu"] = "manage"
+        st.rerun()
+
+with m_col3:
+    type_chat = "primary" if cur_menu == "chat" else "secondary"
+    if st.button("💬 แชท", key="nav_btn_chat", type=type_chat, use_container_width=True):
+        st.session_state["menu"] = "chat"
+        st.rerun()
 
 /* ══ MENUBAR — anchored to a real, stable Streamlit container via key="menubar" ══
    (st.container(key="menubar") makes Streamlit attach a `.st-key-menubar` class
