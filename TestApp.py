@@ -29,6 +29,15 @@ html, body { color-scheme: light !important; background: #dbeafe !important; }
 [data-testid="collapsedControl"],[data-testid="stSidebar"],
 #MainMenu,footer,header[data-testid="stHeader"] { display:none !important; }
 
+/* ══ HIDE THE "RUNNING" STATUS WIDGET (top-right spinner/dot that Streamlit
+   shows on every rerun — separate from stHeader, so it wasn't covered above.
+   With st_autorefresh firing every 1s, this is what blinks top-right constantly) ══ */
+[data-testid="stStatusWidget"],
+[data-testid="stConnectionStatus"],
+div[data-testid="stToolbarActions"] { display:none !important; }
+/* Fallback in case Streamlit reapplies inline styles on rerun before CSS re-attaches */
+[data-testid="stStatusWidget"] { visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
+
 /* ══ GLOBAL FONT & BG ══ */
 html,body,
 [data-testid="stAppViewContainer"],
