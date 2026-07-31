@@ -14,7 +14,9 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="Trip Expense Splitter", layout="wide",
                    page_icon="✈️", initial_sidebar_state="collapsed")
 
-st_autorefresh(interval=1000, limit=None, key="live_refresh")
+# [FIX] เดิม interval=1000 (รีรันทุก 1 วิ) ทำให้ toolbar/สปินเนอร์มุมขวาบนกะพริบ
+# และหน้าเว็บหน่วง — ปรับเป็น 3 วิ ยังพอสำหรับเกณฑ์ online 15 วินาที
+st_autorefresh(interval=3000, limit=None, key="live_refresh")
 
 # ─────────────────────────────────────────────────────────────
 # CSS  — blue theme, black text, fixed header, mobile-ready
@@ -25,18 +27,31 @@ st.markdown("""
 :root { color-scheme: light only !important; }
 html, body { color-scheme: light !important; background: #dbeafe !important; }
 
-/* ══ HIDE STREAMLIT CHROME ══ */
-[data-testid="collapsedControl"],[data-testid="stSidebar"],
-#MainMenu,footer,header[data-testid="stHeader"] { display:none !important; }
-
-/* ══ HIDE THE "RUNNING" STATUS WIDGET (top-right spinner/dot that Streamlit
-   shows on every rerun — separate from stHeader, so it wasn't covered above.
-   With st_autorefresh firing every 1s, this is what blinks top-right constantly) ══ */
+/* ══ [FIX] ซ่อน TOOLBAR มุมขวาบนทั้งหมด ══
+   สาเหตุของ "กล่องขาวทับ navbar" คือ Streamlit toolbar container
+   (stToolbar / stAppToolbar / stAppDeployButton / stDecoration)
+   ซึ่งเดิมไม่ได้ถูกซ่อน และมี z-index สูงกว่า navbar */
+[data-testid="stToolbar"],
+[data-testid="stToolbarActions"],
+[data-testid="stAppDeployButton"],
 [data-testid="stStatusWidget"],
 [data-testid="stConnectionStatus"],
-div[data-testid="stToolbarActions"] { display:none !important; }
-/* Fallback in case Streamlit reapplies inline styles on rerun before CSS re-attaches */
-[data-testid="stStatusWidget"] { visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
+[data-testid="stMainMenu"],
+[data-testid="stDecoration"],
+[data-testid="stHeader"],
+[data-testid="stSidebar"],
+[data-testid="collapsedControl"],
+.stAppToolbar,
+.stAppDeployButton,
+.stDeployButton,
+#MainMenu, header, footer {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    pointer-events: none !important;
+}
 
 /* ══ GLOBAL FONT & BG ══ */
 html,body,
@@ -52,15 +67,11 @@ html,body,
 /* ══ NAVBAR (fixed at top) ══ */
 .navbar-wrap {
     position: fixed;
-    top: 0rem; /* เปลี่ยนจาก 0 เป็น 2.8rem หรือ 45px */
-    left: 0; 
-    right: 0; 
-    z-index: 999; /* ลด z-index ลงมาเล็กน้อย */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999999;   /* [FIX] เดิม 999 — ต่ำกว่า toolbar ของ Streamlit */
     font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-}
-/* เว้นพื้นที่ด้านบนของหน้าเว็บ ไม่ให้เนื้อหาหลักไหลมาจุกทับ Navbar */
-.main .block-container {
-    padding-top: 8rem !important;
 }
 .navbar-wrap .navbar {
     background: #1d4ed8;
@@ -96,16 +107,12 @@ html,body,
     max-width:65px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
 }
 
-/* ══ MENUBAR — anchored to a real, stable Streamlit container via key="menubar" ══
-   (st.container(key="menubar") makes Streamlit attach a `.st-key-menubar` class
-   to the wrapping div — this is a documented, stable hook, unlike relying on
-   internal DOM nesting order which can shift between Streamlit versions/renders
-   and was the root cause of the bar randomly collapsing or being overlapped.) */
+/* ══ MENUBAR — anchored to a real, stable Streamlit container via key="menubar" ══ */
 div.st-key-menubar {
     position: fixed !important;
     top: 50px !important;
     left: 0 !important; right: 0 !important;
-    z-index: 9998 !important;
+    z-index: 999998 !important;   /* [FIX] เดิม 9998 */
     background: #1e3a8a !important;
     padding: 0 !important; margin: 0 !important;
     border-bottom: 3px solid #60a5fa !important;
@@ -145,8 +152,12 @@ div.st-key-menubar .stButton > button[kind="primary"] p {
     color: #fff !important;
 }
 
-/* ══ PUSH CONTENT DOWN so fixed header doesn't cover it ══ */
-.block-container {
+/* ══ PUSH CONTENT DOWN so fixed header doesn't cover it ══
+   [FIX] เดิมมี .main .block-container{padding-top:8rem} ซ้อนกับ
+   .block-container{padding-top:106px} → specificity ชนกัน ทำให้ระยะเพี้ยน
+   ตอนนี้ประกาศค่าเดียวคุมทั้งสองตัวเลือก */
+.block-container,
+.main .block-container {
     padding-top: 106px !important;   /* navbar(50) + menubar(44) + gap(12) */
     padding-left: 1rem !important;
     padding-right: 1rem !important;
@@ -154,7 +165,9 @@ div.st-key-menubar .stButton > button[kind="primary"] p {
     max-width: 100% !important;
 }
 @media (max-width:600px) {
-    .block-container { padding-left:.5rem !important; padding-right:.5rem !important; }
+    .block-container, .main .block-container {
+        padding-left:.5rem !important; padding-right:.5rem !important;
+    }
     .navbar-wrap .nb-title { display:none; }
     .navbar-wrap .nb-trip  { max-width:100px; }
 }
@@ -393,11 +406,9 @@ MENUS = [
 ]
 
 # ── Navbar HTML ──────────────────────────────────────────────
-# กำหนดค่าเริ่มต้นเพื่อป้องกันค่านิล/ว่างเปล่า
-av_char = st.session_state.get("user_avatar", "?")
-name_str = st.session_state.get("user_name", "ล็อกอิน")
-
-# Render HTML
+# [FIX] ลบ 2 บรรทัดที่เขียนทับ av_char / name_str ด้วย session_state
+#       key "user_avatar" / "user_name" ซึ่งไม่เคยถูก set ที่ไหนเลย
+#       ทำให้ avatar โชว์ "?" และชื่อโชว์ "ล็อกอิน" ตลอดแม้ล็อกอินแล้ว
 st.markdown(f"""
 <div class="navbar-wrap">
   <div class="navbar">
@@ -639,12 +650,12 @@ elif menu == "manage":
                 for _, row in trips_df.iterrows():
                     tid2 = int(row["id"])
                     sel = (tid2 == trip_id)
-                    
+
                     # กำหนด Label และ Type ตามสถานะการเลือก
                     chk = "✅ " if sel else ""
                     btn_label = f"{chk}✈️ {row['disp']}"
                     btn_type = "primary" if sel else "secondary"
-                    
+
                     # เมื่อกดปุ่มชื่อ Event
                     if st.button(btn_label, key=f"sel_ev_{tid2}", type=btn_type, use_container_width=True):
                         st.session_state["trip_id"] = tid2
@@ -696,11 +707,11 @@ elif menu == "manage":
 
                     # Checkbox พร้อมผูกการทำงานเข้ากับ on_change Callback
                     st.checkbox(
-                        "☑️ เลือกทั้งหมด", 
-                        key="chk_select_all_mems", 
+                        "☑️ เลือกทั้งหมด",
+                        key="chk_select_all_mems",
                         on_change=toggle_select_all
                     )
-                    
+
                     # Multiselect อ่านและอัปเดตค่าผ่าน session_state ล่าสุด
                     selected_mems = st.multiselect(
                         "เลือกเพื่อน:",
@@ -708,7 +719,7 @@ elif menu == "manage":
                         key="ms_add_mems",
                         placeholder="เลือกเพื่อนที่ต้องการเพิ่ม..."
                     )
-                    
+
                     if st.button("➕ เพิ่มเข้า Event", type="primary", use_container_width=True):
                         if selected_mems:
                             c = db()
@@ -716,11 +727,11 @@ elif menu == "manage":
                                 c.execute("INSERT INTO members (trip_id, name) VALUES (?, ?)", (trip_id, su))
                             c.commit()
                             c.close()
-                            
+
                             # ล้างค่าใน session_state หลังบันทึกเสร็จ
                             st.session_state["chk_select_all_mems"] = False
                             st.session_state["ms_add_mems"] = []
-                            
+
                             st.toast(f"เพิ่ม {len(selected_mems)} คนเข้า Event เรียบร้อย!")
                             time.sleep(0.5)
                             st.rerun()
