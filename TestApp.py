@@ -60,7 +60,7 @@ html,body,
 }
 /* เว้นพื้นที่ด้านบนของหน้าเว็บ ไม่ให้เนื้อหาหลักไหลมาจุกทับ Navbar */
 .main .block-container {
-    padding-top: 5rem !important;
+    padding-top: 8rem !important;
 }
 .navbar-wrap .navbar {
     background: #1d4ed8;
