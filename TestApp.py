@@ -28,7 +28,7 @@ header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-/* ══ HIDE STREAMLIT CHROME ══ */
+# HIDE STREAMLIT CHROME
 [data-testid="collapsedControl"],[data-testid="stSidebar"],
 #MainMenu,footer,header[data-testid="stHeader"] { display:none !important; }
 
