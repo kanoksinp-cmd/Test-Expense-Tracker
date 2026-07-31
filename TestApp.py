@@ -80,34 +80,29 @@ html,body,
     max-width:65px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
 }
 
-/* ══ MENUBAR — fix the Streamlit columns row at top:50px ══ */
-div[data-testid="stHorizontalBlock"]:has(button[data-testid^="baseButton"][key^="nav_"]),
-div[data-testid="stHorizontalBlock"].nav-row {
+/* ══ MENUBAR — anchored to a real, stable Streamlit container via key="menubar" ══
+   (st.container(key="menubar") makes Streamlit attach a `.st-key-menubar` class
+   to the wrapping div — this is a documented, stable hook, unlike relying on
+   internal DOM nesting order which can shift between Streamlit versions/renders
+   and was the root cause of the bar randomly collapsing or being overlapped.) */
+div.st-key-menubar {
     position: fixed !important;
     top: 50px !important;
     left: 0 !important; right: 0 !important;
     z-index: 9998 !important;
     background: #1e3a8a !important;
     padding: 0 !important; margin: 0 !important;
-    gap: 0 !important;
     border-bottom: 3px solid #60a5fa !important;
     width: 100% !important;
 }
-
-/* Simpler fallback — target first horizontal block after app start */
-section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type {
-    position: fixed !important;
-    top: 50px !important;
-    left: 0 !important; right: 0 !important; width: 100% !important;
-    z-index: 9998 !important;
-    background: #1e3a8a !important;
-    padding: 0 !important; margin: 0 !important; gap: 0 !important;
-    border-bottom: 3px solid #60a5fa !important;
+div.st-key-menubar div[data-testid="stHorizontalBlock"] {
+    gap: 0 !important; margin: 0 !important; padding: 0 !important;
 }
-section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"] {
+div.st-key-menubar div[data-testid="column"] {
     padding: 0 !important; flex: 1 !important; min-width: 0 !important;
 }
-section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button {
+div.st-key-menubar .stButton { margin: 0 !important; }
+div.st-key-menubar .stButton > button {
     border-radius: 0 !important;
     height: 44px !important;
     border: none !important;
@@ -120,17 +115,17 @@ section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalB
     text-overflow: ellipsis !important;
     width: 100% !important;
 }
-section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="secondary"] {
+div.st-key-menubar .stButton > button[kind="secondary"] {
     background: #1e3a8a !important; color: #93c5fd !important;
 }
-section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="secondary"] p {
+div.st-key-menubar .stButton > button[kind="secondary"] p {
     color: #93c5fd !important;
 }
-section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="primary"] {
+div.st-key-menubar .stButton > button[kind="primary"] {
     background: #1d4ed8 !important; color: #fff !important;
     border-bottom: 3px solid #60a5fa !important;
 }
-section[data-testid="stMain"] > div > div > div > div[data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="primary"] p {
+div.st-key-menubar .stButton > button[kind="primary"] p {
     color: #fff !important;
 }
 
@@ -366,7 +361,7 @@ if me and trip_id:
     c = db(); r = c.execute("SELECT COUNT(*) as n FROM notifications WHERE trip_id=? AND to_user=? AND is_read=0",(trip_id,me)).fetchone(); notif_count = r["n"] if r else 0; c.close()
 
 # ─────────────────────────────────────────────────────────────
-# FIXED HEADER via JS injection (navbar + menubar)
+# FIXED HEADER (navbar + menubar)
 # ─────────────────────────────────────────────────────────────
 trip_lbl   = cur_trip or "เลือก Event"
 av_char    = me[0].upper() if me else "?"
@@ -396,17 +391,19 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Menu bar — Streamlit buttons styled as fixed menubar ─────
+# ── Menu bar — wrapped in a keyed container so CSS has a stable,
+#    version-proof hook (`.st-key-menubar`) instead of guessing DOM nesting ──
 cur_menu = st.session_state["menu"]
-nav_cols = st.columns(len(MENUS))
-for col, (icon, label, key) in zip(nav_cols, MENUS):
-    badge = f" {notif_count}🔴" if key == "chat" and notif_count > 0 else ""
-    active = cur_menu == key
-    if col.button(f"{icon} {label}{badge}", key=f"nav_{key}",
-                  type="primary" if active else "secondary",
-                  use_container_width=True):
-        st.session_state["menu"] = key
-        st.rerun()
+with st.container(key="menubar"):
+    nav_cols = st.columns(len(MENUS))
+    for col, (icon, label, key) in zip(nav_cols, MENUS):
+        badge = f" {notif_count}🔴" if key == "chat" and notif_count > 0 else ""
+        active = cur_menu == key
+        if col.button(f"{icon} {label}{badge}", key=f"nav_{key}",
+                      type="primary" if active else "secondary",
+                      use_container_width=True):
+            st.session_state["menu"] = key
+            st.rerun()
 
 menu = st.session_state["menu"]
 
