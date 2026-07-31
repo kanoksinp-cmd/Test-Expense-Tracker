@@ -340,7 +340,55 @@ for k,v in [("me",None),("menu","home"),("trip_id",None),("chat_partner",None)]:
     if k not in st.session_state: st.session_state[k]=v
 
 me = st.session_state["me"]
-if me: heartbeat(me)
+if me:
+    # ดึงอักษรตัวแรกของชื่อผู้ใช้มาทำเป็น Avatar (เช่น 'B' สำหรับ บ้านไบร์ท)
+    av_char = me[0].upper()
+    user_disp = f"👤 [{av_char}] {me}"
+else:
+    user_disp = "👤 เข้าสู่ระบบ"
+
+online_count = len(online_users) if 'online_users' in locals() else 1
+
+# ====================================================
+# 2. Navbar ด้านบน (ย้าย บัญชี ขึ้นมุมขวาบน)
+# ====================================================
+col_nav_l, col_nav_r = st.columns([6, 4])
+
+with col_nav_l:
+    trip_name = cur_trip if cur_trip else 'เลือก Event'
+    st.markdown(f"### ✈️ Trip Splitter &nbsp; <span style='font-size:14px; background:rgba(255,255,255,0.2); padding:4px 10px; border-radius:12px;'>✈️ {trip_name}</span>", unsafe_allow_html=True)
+
+with col_nav_r:
+    # ปุ่มมุมขวาบน: แสดงสถานะออนไลน์ + Avatar โปรไฟล์ (กดแล้วเข้าหน้าบัญชี)
+    top_btn_label = f"🟢 {online_count}  |  {user_disp}"
+    if st.button(top_btn_label, key="btn_top_right_account", use_container_width=True):
+        st.session_state["menu"] = "account"
+        st.rerun()
+
+# ====================================================
+# 3. แถบเมนูด้านล่าง (เหลือ 3 แท็บ: หลัก / จัดการ / แชท)
+# ====================================================
+cur_menu = st.session_state.get("menu", "home")
+
+m_col1, m_col2, m_col3 = st.columns(3)
+
+with m_col1:
+    type_home = "primary" if cur_menu == "home" else "secondary"
+    if st.button("🏠 หลัก", key="nav_btn_home", type=type_home, use_container_width=True):
+        st.session_state["menu"] = "home"
+        st.rerun()
+
+with m_col2:
+    type_manage = "primary" if cur_menu == "manage" else "secondary"
+    if st.button("🗓️ จัดการ", key="nav_btn_manage", type=type_manage, use_container_width=True):
+        st.session_state["menu"] = "manage"
+        st.rerun()
+
+with m_col3:
+    type_chat = "primary" if cur_menu == "chat" else "secondary"
+    if st.button("💬 แชท", key="nav_btn_chat", type=type_chat, use_container_width=True):
+        st.session_state["menu"] = "chat"
+        st.rerun()
 online_users = online_now()
 
 # ─────────────────────────────────────────────────────────────
