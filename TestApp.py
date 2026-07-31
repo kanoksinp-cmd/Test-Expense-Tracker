@@ -7,7 +7,6 @@ import time
 import urllib.parse
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
-import streamlit.components.v1 as components
 
 # ─────────────────────────────────────────────────────────────
 # CONFIG
@@ -312,97 +311,14 @@ div.st-key-menubar .stButton > button[kind="primary"] p {
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# [FIX v2] HIDDEN UTILS — component ที่ไม่มี UI แต่ Streamlit บังคับ render iframe
-#   1) st_autorefresh  → iframe ขาวที่โผล่เป็นแถบด้านบน
-#   2) JS cleaner      → ลบ toolbar มุมขวาบนแบบถาวร (CSS อย่างเดียวไม่พอ
-#      เพราะ Streamlit ใส่ inline style กลับมาใหม่ทุกครั้งที่ rerun)
+# [FIX v2] HIDDEN UTILS — st_autorefresh เป็น custom component ที่ Streamlit
+#   บังคับ render เป็น <iframe> สีขาวลงในหน้าจริง ๆ (คือ "แถบขาว" ที่โผล่ด้านบน)
+#   จึงต้องยัดไว้ในคอนเทนเนอร์ที่ถูกดันออกนอก layout
 # ─────────────────────────────────────────────────────────────
-CHROME_KILLER = """
-<script>
-(function () {
-  var doc;
-  try { doc = window.parent.document; }
-  catch (e) { console.warn('[chrome-killer] เข้าถึง parent ไม่ได้:', e); return; }
-
-  // 1) รายการที่รู้จักชื่ออยู่แล้ว
-  var SEL = [
-    '[data-testid="stToolbar"]',
-    '[data-testid="stToolbarActions"]',
-    '[data-testid="stAppDeployButton"]',
-    '[data-testid="stStatusWidget"]',
-    '[data-testid="stConnectionStatus"]',
-    '[data-testid="stMainMenu"]',
-    '[data-testid="stDecoration"]',
-    '[data-testid="stHeader"]',
-    '.stAppToolbar', '.stAppDeployButton', '.stDeployButton',
-    '#MainMenu'
-  ].join(',');
-
-  // เปลี่ยนเป็น true ถ้าอยากซ่อนปุ่ม "Manage app" มุมขวาล่างของ Streamlit Cloud ด้วย
-  var HIDE_MANAGE_APP = false;
-
-  var SAFE = '.navbar-wrap, .st-key-menubar, .st-key-hidden_utils';
-
-  function hide(el, why) {
-    if (el && el.style && el.style.display !== 'none') {
-      el.style.setProperty('display', 'none', 'important');
-      console.log('[chrome-killer] ซ่อน (' + why + '):', el);
-    }
-  }
-
-  function killBySelector() {
-    doc.querySelectorAll(SEL).forEach(function (el) { hide(el, 'selector'); });
-    if (HIDE_MANAGE_APP) {
-      doc.querySelectorAll('[data-testid="manage-app-button"]')
-         .forEach(function (el) { hide(el, 'manage-app'); });
-    }
-  }
-
-  // 2) กวาดตามตำแหน่ง — จับตัวที่ไม่รู้ชื่อ
-  //    เงื่อนไข: ลอย (fixed/absolute/sticky) + ชิดขอบบน + ชิดขอบขวา + ขนาดเล็ก
-  function killTopRight() {
-    var W = doc.documentElement.clientWidth;
-    doc.querySelectorAll('body *').forEach(function (el) {
-      if (el.closest(SAFE)) return;                             // ของเราเอง
-      if (el.querySelector && el.querySelector(SAFE)) return;   // เป็นพ่อของเรา
-      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
-
-      var cs = doc.defaultView.getComputedStyle(el);
-      if (['fixed', 'absolute', 'sticky'].indexOf(cs.position) === -1) return;
-
-      var r = el.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) return;
-      if (r.height > 90 || r.width > 420) return;   // ใหญ่เกิน = ไม่ใช่เป้าหมาย
-      if (r.top > 60) return;                       // ต้องติดขอบบน
-      if (r.right < W - 40) return;                 // ต้องชิดขอบขวา
-      hide(el, 'top-right sweep');
-    });
-  }
-
-  var queued = false;
-  function run() {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(function () {
-      queued = false;
-      killBySelector();
-      killTopRight();
-    });
-  }
-
-  run();
-  // Streamlit สร้าง node ใหม่ทุก rerun → เฝ้าดูแล้วลบซ้ำ
-  new MutationObserver(run).observe(doc.body, { childList: true, subtree: true });
-  setInterval(run, 800);
-})();
-</script>
-"""
-
 with st.container(key="hidden_utils"):
     # interval 3000ms — เดิม 1000ms ทำให้กะพริบและ query DB ถี่เกินจำเป็น
     # (เกณฑ์ online คือ 15 วินาที จึงยังเหลือ margin เยอะ)
     st_autorefresh(interval=3000, limit=None, key="live_refresh")
-    components.html(CHROME_KILLER, height=0, width=0)
 
 # ─────────────────────────────────────────────────────────────
 # DATABASE
@@ -514,22 +430,25 @@ MENUS = [
 ]
 
 # ── Navbar HTML ──────────────────────────────────────────────
-# [FIX] ลบ 2 บรรทัดที่เขียนทับ av_char / name_str ด้วย session_state
-#       key "user_avatar" / "user_name" ซึ่งไม่เคยถูก set ที่ไหนเลย
-#       ทำให้ avatar โชว์ "?" และชื่อโชว์ "ล็อกอิน" ตลอดแม้ล็อกอินแล้ว
-st.markdown(f"""
-<div class="navbar-wrap">
-  <div class="navbar">
-    <span class="nb-icon">✈️</span>
-    <span class="nb-title">Trip Splitter</span>
-    <span class="nb-trip">✈️ {trip_lbl}</span>
-    <span class="nb-spacer"></span>
-    {green_part}{red_part}
-    <div class="nb-avatar">{av_char}</div>
-    <span class="nb-name">{name_str}</span>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+# [FIX v4] ต้นเหตุจริงของ "กล่องขาวมุมขวาบน"
+#   ของเดิมเขียน HTML แบบหลายบรรทัด และมีบรรทัด "    {green_part}{red_part}"
+#   ซึ่งตอนไม่มีคนออนไลน์/ไม่มีแจ้งเตือน ทั้งสองตัวเป็นค่าว่าง → เหลือแค่ช่องว่าง 4 ตัว
+#   = บรรทัดว่างในสายตา Markdown → ปิดบล็อก HTML ทันที
+#   บรรทัดที่เหลือ (<div class="nb-avatar">... ) ย่อหน้า 4 ช่อง → Markdown ตีความ
+#   เป็น "code block" → กลายเป็นกล่องขาวโชว์ HTML ดิบ ๆ ทับ navbar
+#   วิธีแก้: ต่อเป็นสตริงบรรทัดเดียว ไม่มีขึ้นบรรทัดใหม่/ย่อหน้าเลย
+navbar_html = (
+    '<div class="navbar-wrap"><div class="navbar">'
+    '<span class="nb-icon">✈️</span>'
+    '<span class="nb-title">Trip Splitter</span>'
+    f'<span class="nb-trip">✈️ {trip_lbl}</span>'
+    '<span class="nb-spacer"></span>'
+    f'{green_part}{red_part}'
+    f'<div class="nb-avatar">{av_char}</div>'
+    f'<span class="nb-name">{name_str}</span>'
+    '</div></div>'
+)
+st.markdown(navbar_html, unsafe_allow_html=True)
 
 # ── Menu bar — wrapped in a keyed container so CSS has a stable,
 #    version-proof hook (`.st-key-menubar`) instead of guessing DOM nesting ──
