@@ -687,17 +687,44 @@ elif menu == "manage":
             with right2:
                 st.markdown('<div class="section-head">➕ เพิ่มสมาชิก</div>', unsafe_allow_html=True)
                 if avail:
-                    su=st.selectbox("เลือกเพื่อน:", avail, key="sel_mem")
-                    if st.button("➕ เพิ่ม", type="primary", use_container_width=True):
-                        c=db(); c.execute("INSERT INTO members (trip_id,name) VALUES (?,?)",(trip_id,su)); c.commit(); c.close()
-                        st.toast(f"เพิ่ม {su}"); time.sleep(0.5); st.rerun()
-                else: st.info("ทุกคนอยู่ในกลุ่มแล้ว")
+                    # Checkbox สำหรับเลือกสมาชิกทั้งหมดในครั้งเดียว
+                    select_all = st.checkbox("☑️ เลือกทั้งหมด", key="chk_select_all_mems")
+                    
+                    # ถ้าติ๊กเลือกทั้งหมด ค่าเริ่มต้นใน multiselect จะใส่รายชื่อทั้งหมด
+                    default_selected = avail if select_all else []
+                    
+                    # Multiselect ให้ติ๊กเลือก/ลบชื่อได้ทีละหลายคน
+                    selected_mems = st.multiselect(
+                        "เลือกเพื่อน:",
+                        options=avail,
+                        default=default_selected,
+                        key="ms_add_mems",
+                        placeholder="เลือกเพื่อนที่ต้องการเพิ่ม..."
+                    )
+                    
+                    if st.button("➕ เพิ่มเข้า Event", type="primary", use_container_width=True):
+                        if selected_mems:
+                            c = db()
+                            # บันทึกเพื่อนทุกคนที่ถูกเลือกเข้า Database
+                            for su in selected_mems:
+                                c.execute("INSERT INTO members (trip_id, name) VALUES (?, ?)", (trip_id, su))
+                            c.commit()
+                            c.close()
+                            
+                            st.toast(f"เพิ่ม {len(selected_mems)} คนเข้า Event เรียบร้อย!")
+                            time.sleep(0.5)
+                            st.rerun()
+                        else:
+                            st.error("⚠️ กรุณาเลือกสมาชิกอย่างน้อย 1 คน")
+                else:
+                    st.info("ทุกคนอยู่ในกลุ่มแล้ว")
 
                 st.markdown('<div class="section-head" style="margin-top:16px;">🌐 ออนไลน์ตอนนี้</div>', unsafe_allow_html=True)
                 for u2 in online_users:
-                    you2=" (คุณ)" if u2==me else ""
+                    you2 = " (คุณ)" if u2 == me else ""
                     st.markdown(f"🟢 **{u2}**{you2}")
-                if not online_users: st.caption("ไม่มีใครออนไลน์")
+                if not online_users:
+                    st.caption("ไม่มีใครออนไลน์")
 
     # ── TAB: ถังขยะ ──────────────────────────────────────
     with t_trash:
