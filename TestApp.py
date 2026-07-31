@@ -113,18 +113,38 @@ div.st-key-userbtn {
 }
 /* [FIX v7] เรียงลูกในคอนเทนเนอร์แนวนอน: [ป้ายออนไลน์][ป้ายแจ้งเตือน][ปุ่มโปรไฟล์]
    ทำแบบนี้แทนการเว้นระยะใน navbar เพราะความกว้างปุ่มเปลี่ยนตามความยาวชื่อ
-   การเว้นระยะตายตัวจึงเหลือช่องว่างเสมอ */
+   การเว้นระยะตายตัวจึงเหลือช่องว่างเสมอ
+   [FIX v8] ต้องสั่ง flex-direction:row ให้ "ทุกชั้น" เพราะ Streamlit ใส่ class
+   st-key-* ไว้คนละชั้นกันแล้วแต่ version — บาง version อยู่ที่ตัว
+   stVerticalBlock เอง บาง version อยู่ที่ wrapper ชั้นนอก ถ้าสั่งผิดชั้น
+   ชั้นที่ถือลูกจริงจะยังเป็น column อยู่ → ปุ่มตกลงไปทับแถบเมนูข้างล่าง */
+div.st-key-userbtn,
 div.st-key-userbtn > div,
+div.st-key-userbtn > div > div,
 div.st-key-userbtn [data-testid="stVerticalBlock"] {
     display: flex !important;
     flex-direction: row !important;
+    flex-wrap: nowrap !important;
     align-items: center !important;
+    justify-content: flex-end !important;
     gap: 8px !important;
     width: auto !important;
+    max-width: none !important;
 }
 div.st-key-userbtn [data-testid="stElementContainer"],
 div.st-key-userbtn [data-testid="stMarkdownContainer"],
-div.st-key-userbtn .stButton { width: auto !important; margin: 0 !important; }
+div.st-key-userbtn .stButton { width: auto !important; margin: 0 !important; flex: 0 0 auto !important; }
+
+/* [FIX v8] กลไกสำรอง — ดึงป้ายออกจาก flow ไปวางชิดซ้ายของปุ่มโดยตรง
+   วิธีนี้ไม่พึ่ง flex-direction เลย ต่อให้ selector ด้านบนพลาดทุกชั้น
+   ปุ่มก็ยังเป็นลูกเดียวใน flow → ไม่มีทางถูกดันตกลงไปแถวล่าง */
+div.st-key-userbtn [data-testid="stElementContainer"]:has(.nb-badges) {
+    position: absolute !important;
+    right: 100% !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin-right: 8px !important;
+}
 
 div.st-key-userbtn button {
     position: relative !important;
