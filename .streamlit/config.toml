@@ -1,0 +1,5 @@
+[client]
+toolbarMode = "minimal"  # หรือ "viewer" ถ้าไม่อยากให้ผู้ใช้ปิด/ซ่อนแถบเอง
+
+[theme]
+base = "light"
