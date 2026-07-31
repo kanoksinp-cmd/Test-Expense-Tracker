@@ -92,7 +92,7 @@ html,body,
     background: #1d4ed8;
     display: flex; align-items: center;
     height: 50px; padding: 0 12px; gap: 8px;
-    padding-right: 172px;   /* [FIX v5] เว้นที่ให้ปุ่มโปรไฟล์ที่ลอยทับอยู่ */
+    padding-right: 250px;   /* [FIX v7] เว้นที่ให้กลุ่ม ป้าย+ปุ่มโปรไฟล์ ที่ลอยทับอยู่ */
     box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
 
@@ -111,8 +111,19 @@ div.st-key-userbtn {
     z-index: 2147483647 !important;
     margin: 0 !important; padding: 0 !important;
 }
+/* [FIX v7] เรียงลูกในคอนเทนเนอร์แนวนอน: [ป้ายออนไลน์][ป้ายแจ้งเตือน][ปุ่มโปรไฟล์]
+   ทำแบบนี้แทนการเว้นระยะใน navbar เพราะความกว้างปุ่มเปลี่ยนตามความยาวชื่อ
+   การเว้นระยะตายตัวจึงเหลือช่องว่างเสมอ */
 div.st-key-userbtn > div,
+div.st-key-userbtn [data-testid="stVerticalBlock"] {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: auto !important;
+}
 div.st-key-userbtn [data-testid="stElementContainer"],
+div.st-key-userbtn [data-testid="stMarkdownContainer"],
 div.st-key-userbtn .stButton { width: auto !important; margin: 0 !important; }
 
 div.st-key-userbtn button {
@@ -170,14 +181,18 @@ div.st-key-userbtn button[kind="primary"] {
     max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;
 }
 .navbar-wrap .nb-spacer { flex:1; }
-.navbar-wrap .nb-badge-g {
-    background:#16a34a; border-radius:20px;
-    padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
+/* [FIX v7] ป้ายออนไลน์/แจ้งเตือน — ย้ายออกจาก navbar ไปอยู่ในกลุ่มเดียวกับ
+   ปุ่มโปรไฟล์ จึงต้องเป็น selector ระดับ global ไม่ผูกกับ .navbar-wrap */
+.nb-badge-g, .nb-badge-r {
+    display:inline-block; color:#fff !important;
+    border-radius:20px; padding:2px 8px;
+    font-size:11px; font-weight:700; line-height:17px;
+    white-space:nowrap; flex-shrink:0;
 }
-.navbar-wrap .nb-badge-r {
-    background:#dc2626; border-radius:20px;
-    padding:2px 8px; font-size:11px; font-weight:700; white-space:nowrap; flex-shrink:0;
-}
+.nb-badge-g { background:#16a34a; }
+.nb-badge-r { background:#dc2626; }
+.nb-badges  { display:flex; align-items:center; gap:6px; }
+.nb-badges p { margin:0 !important; }
 .navbar-wrap .nb-avatar {
     width:28px; height:28px; border-radius:50%;
     background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.5);
@@ -252,7 +267,7 @@ div.st-key-menubar .stButton > button[kind="primary"] p {
     }
     .navbar-wrap .nb-title { display:none; }
     .navbar-wrap .nb-trip  { max-width:100px; }
-    .navbar-wrap .navbar   { padding-right:124px; }        /* [FIX v5] */
+    .navbar-wrap .navbar   { padding-right:206px; }        /* [FIX v7] */
     div.st-key-userbtn button { max-width:104px !important; }
 }
 
@@ -574,7 +589,6 @@ navbar_html = (
     '<span class="nb-title">Trip Splitter</span>'
     f'<span class="nb-trip">✈️ {trip_lbl}</span>'
     '<span class="nb-spacer"></span>'
-    f'{green_part}{red_part}'
     '</div></div>'
 )
 st.markdown(navbar_html, unsafe_allow_html=True)
@@ -595,6 +609,9 @@ st.markdown(f"<style>div.st-key-userbtn{{{_av_vars}{_col_vars}}}</style>",
             unsafe_allow_html=True)
 
 with st.container(key="userbtn"):
+    if green_part or red_part:   # [FIX v7] ป้ายอยู่ติดปุ่มเสมอ ไม่ว่าชื่อจะสั้นหรือยาว
+        st.markdown(f'<div class="nb-badges">{green_part}{red_part}</div>',
+                    unsafe_allow_html=True)
     if st.button(name_str, key="btn_user",
                  type="primary" if cur_menu == "account" else "secondary"):
         st.session_state["menu"] = "account"
