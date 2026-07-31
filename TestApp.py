@@ -52,7 +52,7 @@ html,body,
 /* ══ NAVBAR (fixed at top) ══ */
 .navbar-wrap {
     position: fixed;
-    top: 1rem; /* เปลี่ยนจาก 0 เป็น 2.8rem หรือ 45px */
+    top: 0rem; /* เปลี่ยนจาก 0 เป็น 2.8rem หรือ 45px */
     left: 0; 
     right: 0; 
     z-index: 999; /* ลด z-index ลงมาเล็กน้อย */
