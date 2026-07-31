@@ -1,5 +1,15 @@
 [client]
-toolbarMode = "minimal"  # หรือ "viewer" ถ้าไม่อยากให้ผู้ใช้ปิด/ซ่อนแถบเอง
+# ล็อกโหมดแถบเมนูด้านบน ไม่ให้ Streamlit หุบอัตโนมัติเมื่อรันบน Codespaces/Cloud
+# ตัวเลือก: "auto" (ค่าเริ่มต้น จะหุบเมื่อตรวจว่าเป็น production), "developer", "viewer", "minimal"
+toolbarMode = "viewer"
+
+# ปิดข้อความแจ้งเตือน error แบบละเอียด (ไม่เกี่ยวกับเมนู แต่กันซ้อนกับ header)
+showErrorDetails = true
+
+[server]
+enableCORS = false
+enableXsrfProtection = false
+headless = true
 
 [theme]
 base = "light"
