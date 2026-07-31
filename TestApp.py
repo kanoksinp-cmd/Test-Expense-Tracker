@@ -340,7 +340,76 @@ for k,v in [("me",None),("menu","home"),("trip_id",None),("chat_partner",None)]:
     if k not in st.session_state: st.session_state[k]=v
 
 me = st.session_state["me"]
-if me: heartbeat(me)
+if me:
+    av_char = me[0].upper()
+    user_disp_name = me
+else:
+    av_char = "👤"
+    user_disp_name = "เข้าสู่ระบบ"
+
+# ── 2. render Navbar (มุมขวาบนคลิกแล้วเปิดหน้า account) ──
+st.markdown(f"""
+<div class="navbar-wrap">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:20px; font-weight:800; color:#fff;">✈️ Trip Splitter</span>
+        <span style="background:rgba(255,255,255,0.2); padding:3px 10px; border-radius:12px; font-size:12px; color:#fff;">
+            ✈️ {cur_trip if cur_trip else 'เลือก Event'}
+        </span>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span style="background:#22c55e; color:#fff; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:700;">
+            🟢 {len(online_users)}
+        </span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── 3. จัดการปุ่มคลิก Profile / Navbar มุมขวาบน ──
+# สร้าง Container/Columns ซ้อนตำแหน่งมุมขวาบนสำหรับดัก Event การคลิกเปลี่ยนหน้าไป 'account'
+col_nav_left, col_nav_right = st.columns([7, 3])
+with col_nav_right:
+    # ปุ่มเปลี่ยนหน้าไปยังบัญชีผู้ใช้
+    if st.button(f"{av_char} {user_disp_name}", key="btn_account_profile", use_container_width=True):
+        st.session_state["menu"] = "account"
+        st.rerun()
+
+# ── 4. Menubar ด้านล่าง (ตัดแท็บ "บัญชี" ออก เหลือ 3 แท็บ) ──
+selected_menu = st.session_state.get("menu", "home")
+
+col_m1, col_m2, col_m3 = st.columns(3)
+
+with col_m1:
+    btn_style = "primary" if selected_menu == "home" else "secondary"
+    if st.button("🏠 หลัก", key="mb_home", type=btn_style, use_container_width=True):
+        st.session_state["menu"] = "home"
+        st.rerun()
+
+with col_m2:
+    btn_style = "primary" if selected_menu == "manage" else "secondary"
+    if st.button("🗓️ จัดการ", key="mb_manage", type=btn_style, use_container_width=True):
+        st.session_state["menu"] = "manage"
+        st.rerun()
+
+with col_m3:
+    btn_style = "primary" if selected_menu == "chat" else "secondary"
+    if st.button("💬 แชท", key="mb_chat", type=btn_style, use_container_width=True):
+        st.session_state["menu"] = "chat"
+        st.rerun()
+/* ปรับแต่งปุ่ม Avatar โปรไฟล์ตรง Navbar */
+div[data-testid="stHorizontalBlock"] button[key="btn_account_profile"] {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 20px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 4px 12px !important;
+}
+
+div[data-testid="stHorizontalBlock"] button[key="btn_account_profile"]:hover {
+    background-color: rgba(255, 255, 255, 0.35) !important;
+    border-color: #ffffff !important;
+}
 online_users = online_now()
 
 # ─────────────────────────────────────────────────────────────
