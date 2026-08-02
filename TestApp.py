@@ -3,10 +3,12 @@ import os
 import pandas as pd
 import sqlite3
 import io
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import time
 import urllib.parse
 import base64
+import re
+import requests
 import qrcode
 import html
 import hashlib
@@ -656,6 +658,50 @@ div[class*="st-key-tabbar"] .stButton button[kind="primary"] p { color: #1d4ed8 
 .qr-cap { font-size:11.5px; color:#374151 !important; line-height:1.55; margin-top:5px; }
 .qr-cap b { color:#dc2626 !important; font-family:var(--font-display); font-size:14px; }
 
+/* ══ [FIX v28] ของที่ต้องหิ้ว ══ */
+.pk-bar { height:8px; background:#dbeafe; border-radius:6px; overflow:hidden; margin:2px 0 6px; }
+.pk-bar-fill { height:100%; background:#16a34a; border-radius:6px; transition:width .3s; }
+.pk-stat { font-size:12px; color:#6b7280 !important; margin-bottom:10px; }
+.pk-who {
+    display:inline-block; color:#fff !important; border-radius:20px;
+    padding:1px 9px; font-size:11px; font-weight:600; margin-left:6px;
+    vertical-align:middle;
+}
+.pk-none { background:#9ca3af; }
+
+/* ══ [FIX v28] แคมป์: จุดกางเต็นท์ + พยากรณ์อากาศ ══ */
+.camp-loc {
+    display:flex; align-items:center; gap:12px;
+    background:#fff; border:1.5px solid #bfdbfe; border-radius:12px;
+    padding:13px 15px; margin-bottom:10px;
+}
+.camp-pin { font-size:26px; line-height:1; }
+.camp-nm { font-family:var(--font-display); font-weight:600; font-size:15px; color:#000 !important; }
+.camp-co { font-size:12px; color:#6b7280 !important; font-variant-numeric:tabular-nums; }
+.camp-day {
+    display:flex; align-items:center; gap:12px;
+    background:#fff; border:1.5px solid #bfdbfe; border-radius:12px;
+    padding:11px 14px; margin-bottom:7px;
+}
+.camp-day-warn { border-color:#fdba74; background:#fff7ed; }
+.camp-dt {
+    width:52px; flex-shrink:0; font-family:var(--font-display);
+    font-weight:600; font-size:13px; color:#1e40af !important;
+}
+.camp-ico { font-size:26px; flex-shrink:0; line-height:1; }
+.camp-mid { flex:1; min-width:0; }
+.camp-txt { font-size:14px; font-weight:600; color:#000 !important; line-height:1.4; }
+.camp-sub { font-size:11.5px; color:#6b7280 !important; line-height:1.5; }
+.camp-tmp {
+    font-family:var(--font-display); font-weight:700; font-size:19px;
+    color:#dc2626 !important; flex-shrink:0; font-variant-numeric:tabular-nums;
+}
+.camp-tmin { font-size:14px; color:#6b7280 !important; font-weight:500; }
+@media (max-width:600px) {
+    .camp-sub { font-size:10.5px; }
+    .camp-tmp { font-size:17px; }
+}
+
 /* ══ CARDS ══ */
 .card {
     background:#fff; border:1.5px solid #bfdbfe; border-radius:12px;
@@ -833,6 +879,13 @@ def init_db():
     cur.execute('CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, trip_id INTEGER, description TEXT, amount REAL, payer_name TEXT, split_members TEXT, image_blob BLOB)')
     cur.execute('CREATE TABLE IF NOT EXISTS settlements (id INTEGER PRIMARY KEY AUTOINCREMENT, trip_id INTEGER, debtor TEXT, creditor TEXT, amount REAL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)')
     cur.execute('CREATE TABLE IF NOT EXISTS online_status (name TEXT PRIMARY KEY, last_seen DATETIME)')
+    # [FIX v28] ของที่ต้องหิ้วไปแคมป์ — ใครรับหน้าที่อะไร
+    cur.execute("""CREATE TABLE IF NOT EXISTS packing (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, trip_id INTEGER,
+        item TEXT NOT NULL, qty TEXT, assignee TEXT,
+        done INTEGER DEFAULT 0, note TEXT,
+        added_by TEXT, expense_id INTEGER,
+        timestamp DATETIME)""")
     cur.execute('''CREATE TABLE IF NOT EXISTS notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT, trip_id INTEGER,
         to_user TEXT, from_user TEXT, message TEXT,
@@ -853,6 +906,10 @@ def init_db():
     #   Event เก่าที่สร้างก่อนมีคอลัมน์นี้จะเป็น NULL = ไม่ทราบผู้สร้าง
     try: conn.execute("ALTER TABLE trips ADD COLUMN created_by TEXT")
     except sqlite3.OperationalError: pass
+    # [FIX v28] จุดกางเต็นท์/จุดนัดพบ — เก็บพิกัดไว้ใช้ทั้งแผนที่และพยากรณ์อากาศ
+    for _c, _t in [("place_name","TEXT"), ("lat","REAL"), ("lon","REAL")]:
+        try: conn.execute(f"ALTER TABLE trips ADD COLUMN {_c} {_t}")
+        except sqlite3.OperationalError: pass
     try: conn.execute("ALTER TABLE expenses ADD COLUMN split_detail TEXT")
     except sqlite3.OperationalError: pass
     # [FIX v22] สลิปยืนยันการโอน
@@ -874,6 +931,7 @@ def init_db():
         "CREATE INDEX IF NOT EXISTS ix_exp_trip   ON expenses(trip_id)",
         "CREATE INDEX IF NOT EXISTS ix_notif_trip ON notifications(trip_id, to_user, is_read)",
         "CREATE INDEX IF NOT EXISTS ix_settle     ON settlements(trip_id)",
+        "CREATE INDEX IF NOT EXISTS ix_packing    ON packing(trip_id)",
     ]:
         try: conn.execute(ddl)
         except sqlite3.OperationalError: pass
@@ -974,7 +1032,7 @@ def rename_user(old, new):
     return True, ""
 
 # ── [FIX v11] สำรอง / กู้คืนข้อมูล ────────────────────────────
-BACKUP_TABLES = ["all_users","trips","members","expenses","settlements","notifications"]
+BACKUP_TABLES = ["all_users","trips","members","expenses","settlements","notifications","packing"]
 
 def export_backup():
     """[FIX v11] Streamlit Community Cloud ใช้ filesystem ชั่วคราว —
@@ -1119,6 +1177,174 @@ def promptpay_qr_uri(raw, amount=None, box=7):
     img = q.make_image(fill_color="#0f2a6b", back_color="white").convert("RGB")
     buf = io.BytesIO(); img.save(buf, format="PNG")
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+# ── [FIX v28] พยากรณ์อากาศ + พระอาทิตย์ขึ้น-ตก ────────────────
+#   ใช้ Open-Meteo: ฟรี ไม่ต้องสมัคร ไม่ต้องใช้ API key
+#   ที่แคมป์ ฝนตกกับมืดเร็วคือสองเรื่องที่ทำให้ทริปพัง จึงดึงมาแค่นี้พอ
+WMO = {
+    0:("☀️","แดดจัด"), 1:("🌤️","แดดบางส่วน"), 2:("⛅","มีเมฆบางส่วน"), 3:("☁️","เมฆมาก"),
+    45:("🌫️","หมอก"), 48:("🌫️","หมอกน้ำแข็ง"),
+    51:("🌦️","ฝนปรอยเบา"), 53:("🌦️","ฝนปรอย"), 55:("🌦️","ฝนปรอยหนัก"),
+    61:("🌧️","ฝนเบา"), 63:("🌧️","ฝนปานกลาง"), 65:("🌧️","ฝนหนัก"),
+    71:("🌨️","หิมะเบา"), 73:("🌨️","หิมะ"), 75:("🌨️","หิมะหนัก"),
+    80:("🌦️","ฝนซู่เบา"), 81:("🌧️","ฝนซู่"), 82:("⛈️","ฝนซู่หนัก"),
+    95:("⛈️","พายุฝนฟ้าคะนอง"), 96:("⛈️","พายุลูกเห็บ"), 99:("⛈️","พายุลูกเห็บหนัก"),
+}
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def fetch_forecast(lat, lon, days=7):
+    """คืน (ok, ข้อมูล|ข้อความerror) — แคช 30 นาที เพราะหน้าจอ rerun ทุก 3 วิ
+    ถ้าไม่แคชจะยิง API ซ้ำจนโดนบล็อก"""
+    try:
+        r = requests.get("https://api.open-meteo.com/v1/forecast", timeout=12, params={
+            "latitude": lat, "longitude": lon,
+            "daily": ("weather_code,temperature_2m_max,temperature_2m_min,"
+                      "precipitation_probability_max,precipitation_sum,"
+                      "wind_speed_10m_max,sunrise,sunset"),
+            "timezone": "Asia/Bangkok", "forecast_days": days})
+        if r.status_code != 200:
+            return False, f"เรียกข้อมูลไม่สำเร็จ ({r.status_code})"
+        d = r.json().get("daily")
+        if not d: return False, "ไม่มีข้อมูลพยากรณ์สำหรับพิกัดนี้"
+        return True, d
+    except requests.RequestException as e:
+        return False, f"ต่ออินเทอร์เน็ตไม่ได้: {e}"
+
+def parse_latlon(text):
+    """รับได้ทั้ง '18.79, 98.98' และลิงก์ Google Maps ที่มี @lat,lon หรือ q=lat,lon
+    คืน (lat, lon) หรือ (None, None)"""
+    t = str(text or "")
+    m = (re.search(r'@(-?\d+\.\d+),(-?\d+\.\d+)', t)
+         or re.search(r'[?&]q=(-?\d+\.\d+),\s*(-?\d+\.\d+)', t)
+         or re.search(r'(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)', t))
+    if not m: return None, None
+    la, lo = float(m.group(1)), float(m.group(2))
+    if -90 <= la <= 90 and -180 <= lo <= 180:
+        return la, lo
+    return None, None
+
+
+# ── [FIX v28] สรุปทริปเป็นรูป ไว้ใช้ตอนไม่มีสัญญาณ ────────────
+#   ที่แคมป์เน็ตมักไม่มี แต่แอปนี้เป็นเว็บ = เปิดไม่ได้เลยตอนไปถึง
+#   จึงต้องมีทางเอาข้อมูลสำคัญออกมาเก็บไว้ในเครื่องก่อนออกเดินทาง
+def _supports_thai(path):
+    """ทดสอบจริงว่าฟอนต์วาดอักษรไทยได้ไหม
+    เช็คแค่ว่าไฟล์เปิดได้ไม่พอ — ฟอนต์ที่ไม่มีอักษรไทยจะวาดเป็นสี่เหลี่ยมเปล่า
+    จึงต้องเทียบภาพของ 'ก' กับอักขระที่ไม่มีแน่ ๆ ถ้าเหมือนกัน = เป็นสี่เหลี่ยม"""
+    try:
+        f = ImageFont.truetype(path, 24)
+        a = Image.new("L", (30, 30), 0); ImageDraw.Draw(a).text((2, 2), "ก", font=f, fill=255)
+        b = Image.new("L", (30, 30), 0); ImageDraw.Draw(b).text((2, 2), "\uFFFF", font=f, fill=255)
+        return bytes(a.tobytes()) != bytes(b.tobytes()) and a.getbbox() is not None
+    except (OSError, IOError, ValueError):
+        return False
+
+@st.cache_resource(show_spinner=False)
+def _thai_font_path():
+    """หาไฟล์ฟอนต์ไทยครั้งเดียวแล้วจำไว้ (การสแกนโฟลเดอร์ช้าเกินกว่าจะทำทุกครั้ง)
+    ลำดับ: ฟอนต์ไทยแท้ → ฟอนต์ที่บังเอิญมีอักษรไทย → None
+    ถ้าอยากได้ผลสวยบน Streamlit Cloud ให้ใส่ fonts-thai-tlwg ใน packages.txt"""
+    import glob
+    preferred = [
+        "/usr/share/fonts/truetype/tlwg/Garuda.ttf",
+        "/usr/share/fonts/truetype/tlwg/Sarabun.ttf",
+        "/usr/share/fonts/truetype/tlwg/Loma.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSansThai-Regular.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSerifThai-Regular.ttf",
+    ]
+    for path in preferred:
+        if os.path.exists(path) and _supports_thai(path):
+            return path
+    for path in sorted(glob.glob("/usr/share/fonts/**/*.tt[fc]", recursive=True)):
+        if _supports_thai(path):
+            return path
+    return None
+
+def _thai_font(size):
+    path = _thai_font_path()
+    if path:
+        try:
+            return ImageFont.truetype(path, size)
+        except (OSError, IOError):
+            pass
+    return ImageFont.load_default()
+
+def offline_sheet(trip_id, trip_name, trip_date, members, me):
+    """รวมยอดที่ต้องจ่าย แผนโอน QR พร้อมเพย์ และของที่ต้องหิ้ว เป็นรูปเดียว"""
+    net, exps, _paid = compute_net(trip_id, members)
+    plan = settle_plan(net)
+    c = db()
+    prof = {r['name']: r['promptpay'] for r in
+            c.execute("SELECT name,promptpay FROM all_users").fetchall()}
+    packs = c.execute("SELECT item,qty,assignee,done FROM packing WHERE trip_id=? ORDER BY done,id",
+                      (trip_id,)).fetchall()
+    c.close()
+
+    W = 820
+    f_big, f_mid, f_sm = _thai_font(38), _thai_font(23), _thai_font(18)
+    my_rows = [(d, cr, a) for d, cr, a in plan if me in (d, cr)]
+    # [FIX v28] วาดลงผืนสูงเผื่อไว้ก่อน แล้วค่อยตัดตามความสูงจริงตอนจบ
+    #   ของเดิมคำนวณความสูงล่วงหน้าแล้วประเมินพลาด ทำให้ QR กับรายการของทับกัน
+    #   วิธีนี้ไม่มีทางคำนวณผิดเพราะตัดตามตำแหน่งที่วาดจริง
+    img = Image.new("RGB", (W, 2400), "#ffffff")
+    dr = ImageDraw.Draw(img)
+
+    dr.rectangle([0, 0, W, 96], fill="#1d4ed8")
+    dr.text((28, 20), str(trip_name or "ทริป"), font=f_big, fill="#ffffff")
+    sub = f"{trip_date or ''}   ·   {len(members)} คน   ·   {len(exps)} บิล"
+    dr.text((30, 64), sub, font=f_sm, fill="#bfdbfe")
+
+    y = 122
+    mine = net.get(me, 0.0)
+    if mine < -0.01:
+        dr.text((28, y), "คุณต้องจ่าย", font=f_sm, fill="#6b7280")
+        dr.text((28, y + 24), f"{abs(mine):,.2f} บาท", font=f_big, fill="#dc2626")
+    elif mine > 0.01:
+        dr.text((28, y), "คุณจะได้คืน", font=f_sm, fill="#6b7280")
+        dr.text((28, y + 24), f"{mine:,.2f} บาท", font=f_big, fill="#16a34a")
+    else:
+        dr.text((28, y + 24), "เคลียร์หมดแล้ว", font=f_big, fill="#1d4ed8")
+    y += 92
+
+    dr.line([28, y, W - 28, y], fill="#dbeafe", width=2); y += 16
+    dr.text((28, y), "แผนโอนเงิน", font=f_mid, fill="#000000"); y += 34
+    if not plan:
+        dr.text((36, y), "ไม่มีใครต้องโอนให้ใคร", font=f_sm, fill="#6b7280"); y += 30
+    for d, cr, a in plan:
+        hl = me in (d, cr)
+        dr.text((36, y), f"{d}  →  {cr}", font=f_sm, fill="#000000" if hl else "#6b7280")
+        dr.text((W - 200, y), f"{a:,.2f} บาท", font=f_sm,
+                fill="#dc2626" if hl else "#9ca3af")
+        y += 32
+
+    # QR ของยอดที่เราต้องโอน — ส่วนที่มีค่าที่สุดตอนออฟไลน์
+    for d, cr, a in my_rows:
+        if d == me and prof.get(cr):
+            png = promptpay_qr_png(prof[cr], a, box=6)
+            if png:
+                y += 8
+                dr.text((28, y), f"สแกนโอนให้ {cr}  ({a:,.2f} บาท)", font=f_sm, fill="#000000")
+                qr = Image.open(io.BytesIO(png)).convert("RGB")
+                qr.thumbnail((210, 210))
+                img.paste(qr, (28, y + 26))
+                y += 26 + qr.size[1] + 10
+            break
+
+    if packs:
+        dr.line([28, y, W - 28, y], fill="#dbeafe", width=2); y += 16
+        dr.text((28, y), "ของที่ต้องหิ้ว", font=f_mid, fill="#000000"); y += 34
+        for r in packs:
+            mark = "[x]" if r['done'] else "[  ]"
+            who = f" — {r['assignee']}" if r['assignee'] else " — ยังไม่มีคนรับ"
+            line = f"{mark} {r['item']}" + (f" ({r['qty']})" if r['qty'] else "") + who
+            dr.text((36, y), line[:74], font=f_sm,
+                    fill="#9ca3af" if r['done'] else "#000000")
+            y += 28
+
+    img = img.crop((0, 0, W, min(int(y) + 26, 2400)))   # ตัดตามความสูงจริง
+    buf = io.BytesIO(); img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def empty_state(icon, title, sub, btn_label=None, btn_key=None, goto=None):
@@ -1291,12 +1517,13 @@ def online_now():
 #   ไม่ต้องพึ่งการจำบัมพ์เลขเวอร์ชันด้วยมือ
 SCHEMA_COLS = {
     "all_users":     {"promptpay","bank_name","bank_account","avatar_blob"},
-    "trips":         {"trip_date","created_by"},
+    "trips":         {"trip_date","created_by","place_name","lat","lon"},
     "expenses":      {"split_detail"},
     "settlements":   {"slip_blob"},
     "notifications": {"is_auto","is_read","timestamp"},
     "members":       {"trip_id","name"},
     "online_status": {"name","last_seen"},
+    "packing":       {"trip_id","item","assignee","done","expense_id"},
 }
 
 def schema_ready():
@@ -1507,7 +1734,8 @@ if menu == "home":
             '</div>', unsafe_allow_html=True)
 
         # [FIX v19] ใช้ tab_bar แทน st.tabs — แท็บที่เลือกจะไม่เด้งกลับเองอีก
-        _ht = tab_bar("tab_home", ["➕ เพิ่มบิล", "📋 ประวัติ", "💰 สรุปเงิน"])
+        _ht = tab_bar("tab_home", ["➕ เพิ่มบิล", "📋 ประวัติ", "💰 สรุปเงิน",
+                                   "🎒 ของที่ต้องหิ้ว", "⛺ แคมป์"])
 
         # ── TAB 1 ──────────────────────────────────────────────
         if _ht == 0:
@@ -1811,6 +2039,204 @@ if menu == "home":
                 lm+="========================"
                 st.text_area("ข้อความ LINE:", value=lm, height=180, disabled=True)
                 st.link_button("🟢 เปิด LINE", f"https://line.me/R/msg/text/?{urllib.parse.quote(lm)}", type="primary", use_container_width=True)
+
+        # ── TAB 4: ของที่ต้องหิ้ว ──────────────────────────────
+        if _ht == 3:
+            c = db()
+            packs = c.execute("SELECT * FROM packing WHERE trip_id=? ORDER BY done, id",
+                              (trip_id,)).fetchall()
+            c.close()
+
+            with st.form("add_pack", clear_on_submit=True):
+                pc1, pc2, pc3 = st.columns([3, 1, 2])
+                _it  = pc1.text_input("ของที่ต้องเอาไป:", placeholder="เต็นท์, เตาแก๊ส, ถ่าน, น้ำแข็ง")
+                _qty = pc2.text_input("จำนวน:", placeholder="2 หลัง")
+                _who = pc3.selectbox("ใครรับผิดชอบ:", ["— ยังไม่มีคนรับ —"] + members)
+                if st.form_submit_button("➕ เพิ่มเข้ารายการ", type="primary", use_container_width=True):
+                    if _it.strip():
+                        c = db()
+                        c.execute("INSERT INTO packing (trip_id,item,qty,assignee,done,added_by,timestamp) "
+                                  "VALUES (?,?,?,?,0,?,?)",
+                                  (trip_id, _it.strip(), _qty.strip(),
+                                   None if _who.startswith("—") else _who, me, now_str()))
+                        c.commit(); c.close()
+                        flash(f"เพิ่ม '{_it.strip()}' แล้ว", "ok"); st.rerun()
+                    else:
+                        st.error("⚠️ กรอกชื่อของก่อน")
+
+            if not packs:
+                empty_state("🎒", "ยังไม่มีรายการของ",
+                            "ใส่ของที่ต้องเอาไปแล้วแบ่งกันว่าใครหิ้วอะไร "
+                            "จะได้ไม่มีใครลืมเต็นท์")
+            else:
+                _done = sum(1 for r in packs if r['done'])
+                _mine = sum(1 for r in packs if r['assignee'] == me and not r['done'])
+                _free = sum(1 for r in packs if not r['assignee'])
+                st.markdown(
+                    f'<div class="pk-bar"><div class="pk-bar-fill" style="width:{_done/len(packs)*100:.0f}%;"></div></div>'
+                    f'<div class="pk-stat">เตรียมแล้ว {_done}/{len(packs)} · '
+                    f'ของคุณค้างอยู่ {_mine} · ยังไม่มีคนรับ {_free}</div>',
+                    unsafe_allow_html=True)
+
+                for r in packs:
+                    k = r['id']
+                    row = st.columns([0.6, 4, 2.2, 1.2])
+                    _new_done = row[0].checkbox("เตรียมแล้ว", value=bool(r['done']),
+                                                key=f"pkdone_{k}", label_visibility="collapsed")
+                    if _new_done != bool(r['done']):
+                        c = db(); c.execute("UPDATE packing SET done=? WHERE id=?", (int(_new_done), k)); c.commit(); c.close()
+                        st.rerun()
+                    _sty = "opacity:.5;text-decoration:line-through;" if r['done'] else ""
+                    _own = (f'<span class="pk-who" style="background:{person_color(r["assignee"])};">'
+                            f'{esc(r["assignee"])}</span>' if r['assignee']
+                            else '<span class="pk-who pk-none">ยังไม่มีคนรับ</span>')
+                    row[1].markdown(
+                        f'<div style="{_sty}padding-top:5px;">'
+                        f'<b>{esc(r["item"])}</b>'
+                        f'{" · " + esc(r["qty"]) if r["qty"] else ""} {_own}</div>',
+                        unsafe_allow_html=True)
+                    _opts = ["— ยังไม่มีคนรับ —"] + members
+                    _cur = r['assignee'] if r['assignee'] in members else "— ยังไม่มีคนรับ —"
+                    _pick = row[2].selectbox("ผู้รับผิดชอบ", _opts, index=_opts.index(_cur),
+                                             key=f"pkwho_{k}", label_visibility="collapsed")
+                    if _pick != _cur:
+                        c = db(); c.execute("UPDATE packing SET assignee=? WHERE id=?",
+                                            (None if _pick.startswith("—") else _pick, k)); c.commit(); c.close()
+                        st.rerun()
+                    if row[3].button("ลบ", key=f"pkdel_{k}", use_container_width=True):
+                        c = db(); c.execute("DELETE FROM packing WHERE id=?", (k,)); c.commit(); c.close()
+                        flash("ลบรายการแล้ว", "warn"); st.rerun()
+
+                # [FIX v28] จุดที่เชื่อมกับระบบบิล — ของที่ซื้อมาแล้วกลายเป็นบิลได้เลย
+                st.markdown('<div class="section-head" style="margin-top:14px;">'
+                            '💸 ซื้อของแล้ว → ทำเป็นบิลหารกัน</div>', unsafe_allow_html=True)
+                _buyable = [r for r in packs if not r['expense_id']]
+                if not _buyable:
+                    st.caption("ทุกรายการถูกบันทึกเป็นบิลไปแล้ว")
+                else:
+                    with st.form("pack_to_bill", clear_on_submit=True):
+                        _lbl = {f"{r['item']}" + (f" ({r['qty']})" if r['qty'] else ""): r['id']
+                                for r in _buyable}
+                        _sel = st.selectbox("รายการที่ซื้อมาแล้ว:", list(_lbl.keys()))
+                        _b1, _b2 = st.columns(2)
+                        _amt = _b1.number_input("จ่ายไปเท่าไหร่ (บาท):", min_value=0.0, step=10.0)
+                        _payer = _b2.selectbox("ใครเป็นคนจ่าย:", members,
+                                               index=members.index(me) if me in members else 0)
+                        if st.form_submit_button("💸 บันทึกเป็นบิลหารกัน", type="primary",
+                                                 use_container_width=True):
+                            if _amt <= 0:
+                                st.error("⚠️ ใส่จำนวนเงินก่อน")
+                            elif not members:
+                                st.error("⚠️ ยังไม่มีสมาชิกในทริป")
+                            else:
+                                _pid = _lbl[_sel]
+                                c = db()
+                                c.execute("INSERT INTO expenses (trip_id,description,amount,payer_name,split_members) "
+                                          "VALUES (?,?,?,?,?)",
+                                          (trip_id, _sel, _amt, _payer, ",".join(members)))
+                                _eid = c.execute("SELECT last_insert_rowid() AS i").fetchone()["i"]
+                                c.execute("UPDATE packing SET expense_id=?, done=1 WHERE id=?", (_eid, _pid))
+                                _sh = split_amounts(_amt, members)
+                                for _m2 in members:
+                                    if _m2 != _payer:
+                                        c.execute("INSERT INTO notifications (trip_id,to_user,from_user,message,is_auto,is_read,timestamp) "
+                                                  "VALUES (?,?,'ระบบสรุปยอด',?,1,0,?)",
+                                                  (trip_id, _m2,
+                                                   f"🎒 ของแคมป์: '{_sel}'\n💰 {_amt:,.2f} บาท | จ่ายโดย: {_payer}\n"
+                                                   f"💸 ส่วนคุณ: {_sh.get(_m2,0):,.2f} บาท", now_str()))
+                                c.commit(); c.close()
+                                flash(f"บันทึก '{_sel}' เป็นบิลแล้ว", "ok"); st.rerun()
+
+        # ── TAB 5: แคมป์ (พิกัด + อากาศ + เตรียมออฟไลน์) ────────
+        if _ht == 4:
+            c = db()
+            _tr = c.execute("SELECT place_name,lat,lon FROM trips WHERE id=?", (trip_id,)).fetchone()
+            c.close()
+            _pname = _tr["place_name"] if _tr else None
+            _lat, _lon = (_tr["lat"], _tr["lon"]) if _tr else (None, None)
+
+            st.markdown('<div class="section-head">⛺ จุดกางเต็นท์ / จุดนัดพบ</div>',
+                        unsafe_allow_html=True)
+            with st.form("camp_loc"):
+                _pn = st.text_input("ชื่อสถานที่:", value=_pname or "",
+                                    placeholder="ลานกางเต็นท์ผาหล่มสัก")
+                _co = st.text_input("พิกัด หรือลิงก์ Google Maps:",
+                                    value=(f"{_lat}, {_lon}" if _lat is not None else ""),
+                                    placeholder="18.7883, 98.9853 หรือวางลิงก์แผนที่มาเลย")
+                if st.form_submit_button("💾 บันทึกจุดกางเต็นท์", type="primary",
+                                         use_container_width=True):
+                    _la, _lo = parse_latlon(_co)
+                    if _co.strip() and _la is None:
+                        st.error("⚠️ อ่านพิกัดไม่ออก — ใส่แบบ 18.7883, 98.9853 "
+                                 "หรือวางลิงก์ Google Maps ที่มีพิกัดอยู่")
+                    else:
+                        c = db()
+                        c.execute("UPDATE trips SET place_name=?, lat=?, lon=? WHERE id=?",
+                                  (_pn.strip() or None, _la, _lo, trip_id))
+                        c.commit(); c.close()
+                        flash("บันทึกจุดกางเต็นท์แล้ว", "ok"); st.rerun()
+
+            if _lat is not None:
+                _url = f"https://www.google.com/maps/search/?api=1&query={_lat},{_lon}"
+                st.markdown(
+                    f'<div class="camp-loc"><div class="camp-pin">📍</div><div>'
+                    f'<div class="camp-nm">{esc(_pname or "จุดกางเต็นท์")}</div>'
+                    f'<div class="camp-co">{_lat:.5f}, {_lon:.5f}</div></div></div>',
+                    unsafe_allow_html=True)
+                st.link_button("🗺️ เปิดใน Google Maps", _url, use_container_width=True)
+
+                st.markdown('<div class="section-head" style="margin-top:16px;">'
+                            '🌤️ อากาศ 7 วันข้างหน้า</div>', unsafe_allow_html=True)
+                _ok, _fc = fetch_forecast(_lat, _lon)
+                if not _ok:
+                    st.warning(f"ดึงพยากรณ์อากาศไม่ได้: {_fc}")
+                    st.caption("ลองใหม่อีกครั้ง หรือเช็คว่าเซิร์ฟเวอร์ต่อเน็ตออกได้ไหม")
+                else:
+                    _d = _fc
+                    for _i, _day in enumerate(_d["time"]):
+                        _code = _d["weather_code"][_i]
+                        _ico, _txt = WMO.get(_code, ("🌡️", "—"))
+                        _rain = _d["precipitation_probability_max"][_i]
+                        _rain = 0 if _rain is None else _rain
+                        _warn = "camp-day-warn" if (_rain >= 60 or _code in (95,96,99,82,65)) else ""
+                        try:
+                            _dt = datetime.strptime(_day, "%Y-%m-%d")
+                            _lbl = ["จ","อ","พ","พฤ","ศ","ส","อา"][_dt.weekday()] + f" {_dt.day}/{_dt.month}"
+                        except (ValueError, TypeError):
+                            _lbl = _day
+                        _sr = str(_d["sunrise"][_i])[11:16]
+                        _ss = str(_d["sunset"][_i])[11:16]
+                        st.markdown(
+                            f'<div class="camp-day {_warn}">'
+                            f'<div class="camp-dt">{_lbl}</div>'
+                            f'<div class="camp-ico">{_ico}</div>'
+                            f'<div class="camp-mid"><div class="camp-txt">{_txt}</div>'
+                            f'<div class="camp-sub">💧 โอกาสฝน {_rain:.0f}% · '
+                            f'💨 {_d["wind_speed_10m_max"][_i]:.0f} กม./ชม. · '
+                            f'🌅 {_sr} · 🌇 {_ss}</div></div>'
+                            f'<div class="camp-tmp">{_d["temperature_2m_max"][_i]:.0f}°'
+                            f'<span class="camp-tmin">/{_d["temperature_2m_min"][_i]:.0f}°</span></div>'
+                            f'</div>', unsafe_allow_html=True)
+                    st.caption("ข้อมูลจาก Open-Meteo · แถบสีส้มคือวันที่ฝนน่าจะตกหนัก "
+                               "ควรเตรียมผ้าใบกันฝนหรือเลื่อนวัน")
+            else:
+                empty_state("📍", "ยังไม่ได้ตั้งจุดกางเต็นท์",
+                            "ใส่พิกัดหรือวางลิงก์ Google Maps ด้านบน "
+                            "แล้วจะได้พยากรณ์อากาศกับเวลาพระอาทิตย์ตกของที่นั่นเลย")
+
+            # ── เตรียมไว้ใช้ตอนไม่มีสัญญาณ ──
+            st.markdown('<div class="section-head" style="margin-top:16px;">'
+                        '📴 เตรียมไว้ใช้ตอนไม่มีสัญญาณ</div>', unsafe_allow_html=True)
+            st.caption("ที่แคมป์ส่วนใหญ่เน็ตไม่มี แอปนี้เป็นเว็บจึงเปิดไม่ได้ — "
+                       "โหลดสรุปเก็บไว้ในเครื่องก่อนออกเดินทาง")
+            if _thai_font_path() is None:
+                st.warning("เซิร์ฟเวอร์ไม่มีฟอนต์ภาษาไทย รูปที่ได้จะเป็นสี่เหลี่ยม — "
+                           "เพิ่มไฟล์ `packages.txt` ที่มีบรรทัด `fonts-thai-tlwg` "
+                           "ไว้ข้าง ๆ app.py แล้ว reboot app")
+            _png = offline_sheet(trip_id, cur_trip, cur_date, members, me)
+            st.download_button("⬇️ โหลดสรุปทริปเป็นรูป (ใช้ได้ตอนออฟไลน์)",
+                               data=_png, file_name=f"trip_{trip_id}_offline.png",
+                               mime="image/png", type="primary", use_container_width=True)
 
 # ═══════════════════════════════════════════════════════
 # PAGE: จัดการ (Events + Members รวมกัน)
