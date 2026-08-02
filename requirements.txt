@@ -3,3 +3,4 @@ streamlit-autorefresh>=1.0.1
 pandas>=2.0
 Pillow>=10.0
 qrcode>=7.4
+requests>=2.31
