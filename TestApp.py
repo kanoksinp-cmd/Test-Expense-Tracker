@@ -1240,11 +1240,20 @@ def _supports_thai(path):
     except (OSError, IOError, ValueError):
         return False
 
+# ดาวน์โหลดฟอนต์ไทยมาเก็บไว้เอง ถ้าเซิร์ฟเวอร์ไม่มี
+#   Sarabun เป็นฟอนต์ราชการไทย อ่านง่าย มีสัญญาอนุญาต OFL ใช้ได้เสรี
+THAI_FONT_URL = ("https://raw.githubusercontent.com/google/fonts/main/"
+                 "ofl/sarabun/Sarabun-Regular.ttf")
+THAI_FONT_CACHE = "/tmp/Sarabun-Regular.ttf"
+
 @st.cache_resource(show_spinner=False)
 def _thai_font_path():
-    """หาไฟล์ฟอนต์ไทยครั้งเดียวแล้วจำไว้ (การสแกนโฟลเดอร์ช้าเกินกว่าจะทำทุกครั้ง)
-    ลำดับ: ฟอนต์ไทยแท้ → ฟอนต์ที่บังเอิญมีอักษรไทย → None
-    ถ้าอยากได้ผลสวยบน Streamlit Cloud ให้ใส่ fonts-thai-tlwg ใน packages.txt"""
+    """[FIX v29] หาฟอนต์ไทยแบบไม่พึ่งโชค — ลำดับความพยายาม 3 ชั้น
+    1) ฟอนต์ไทยที่ติดตั้งในเครื่อง (ถ้าใส่ fonts-thai-tlwg ใน packages.txt)
+    2) ฟอนต์อื่นในเครื่องที่บังเอิญมีอักษรไทย
+    3) โหลด Sarabun จาก Google Fonts มาเก็บไว้ที่ /tmp แล้วใช้ต่อ
+    ที่ต้องมีชั้นที่ 3 เพราะ packages.txt ต้อง reboot app ถึงจะมีผล
+    และบางสภาพแวดล้อมก็ลง apt ไม่ได้เลย"""
     import glob
     preferred = [
         "/usr/share/fonts/truetype/tlwg/Garuda.ttf",
@@ -1256,10 +1265,28 @@ def _thai_font_path():
     for path in preferred:
         if os.path.exists(path) and _supports_thai(path):
             return path
+
+    if os.path.exists(THAI_FONT_CACHE) and _supports_thai(THAI_FONT_CACHE):
+        return THAI_FONT_CACHE
+
+    # ฟอนต์ระบบตัวอื่นที่พอวาดไทยได้ (เช่น FreeSerif) — ใช้เป็นตัวสำรอง
+    system_fallback = None
     for path in sorted(glob.glob("/usr/share/fonts/**/*.tt[fc]", recursive=True)):
         if _supports_thai(path):
-            return path
-    return None
+            system_fallback = path
+            break
+
+    try:
+        r = requests.get(THAI_FONT_URL, timeout=25)
+        if r.status_code == 200 and len(r.content) > 20000:
+            with open(THAI_FONT_CACHE, "wb") as f:
+                f.write(r.content)
+            if _supports_thai(THAI_FONT_CACHE):
+                return THAI_FONT_CACHE
+    except (requests.RequestException, OSError):
+        pass
+
+    return system_fallback
 
 def _thai_font(size):
     path = _thai_font_path()
@@ -2178,12 +2205,40 @@ if menu == "home":
 
             if _lat is not None:
                 _url = f"https://www.google.com/maps/search/?api=1&query={_lat},{_lon}"
+                _dir = f"https://www.google.com/maps/dir/?api=1&destination={_lat},{_lon}"
                 st.markdown(
                     f'<div class="camp-loc"><div class="camp-pin">📍</div><div>'
                     f'<div class="camp-nm">{esc(_pname or "จุดกางเต็นท์")}</div>'
                     f'<div class="camp-co">{_lat:.5f}, {_lon:.5f}</div></div></div>',
                     unsafe_allow_html=True)
-                st.link_button("🗺️ เปิดใน Google Maps", _url, use_container_width=True)
+
+                # [FIX v29] แผนที่ในหน้าเว็บเลย ไม่ต้องกดออกไปข้างนอก
+                #   ใช้ st.map ซึ่งเป็นของ Streamlit เอง — ไม่ต้องใช้ API key
+                #   ไม่ต้องพึ่ง iframe ที่ปลายทางอาจบล็อก และเลื่อน/ซูมได้จริง
+                _mv = st.radio("รูปแบบแผนที่", ["🗺️ แผนที่ในหน้า", "🌏 Google Maps (ฝัง)"],
+                               horizontal=True, key="camp_mapmode",
+                               label_visibility="collapsed")
+                if _mv.startswith("🗺️"):
+                    st.map(pd.DataFrame({"lat": [_lat], "lon": [_lon]}),
+                           zoom=13, size=60, color="#dc2626")
+                else:
+                    # Google Maps แบบฝัง: ใช้ได้โดยไม่ต้องมี API key
+                    #   แต่ Google อาจบล็อกการฝังในบาง network/เบราว์เซอร์
+                    #   ถ้าขึ้นว่าง ให้สลับกลับไปใช้ "แผนที่ในหน้า" ได้ทันที
+                    # [FIX v29] ใช้ st.html แทน components.iframe
+                    #   ตัวหลังถูกประกาศเลิกใช้ตั้งแต่ 1 มิ.ย. 2026 (เลยกำหนดมาแล้ว)
+                    st.html(
+                        f'<iframe src="https://maps.google.com/maps?q={_lat},{_lon}'
+                        f'&z=15&output=embed" width="100%" height="340" '
+                        f'style="border:1.5px solid #bfdbfe;border-radius:12px;" '
+                        f'loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>')
+                    st.caption("ถ้าช่องแผนที่ว่างเปล่า แปลว่าเบราว์เซอร์บล็อกการฝังของ Google "
+                               "— สลับไปใช้ “แผนที่ในหน้า” ได้เลย")
+
+                _mc1, _mc2 = st.columns(2)
+                _mc1.link_button("🗺️ เปิดใน Google Maps", _url, use_container_width=True)
+                _mc2.link_button("🧭 นำทางไปที่นี่", _dir, use_container_width=True,
+                                 type="primary")
 
                 st.markdown('<div class="section-head" style="margin-top:16px;">'
                             '🌤️ อากาศ 7 วันข้างหน้า</div>', unsafe_allow_html=True)
@@ -2230,9 +2285,9 @@ if menu == "home":
             st.caption("ที่แคมป์ส่วนใหญ่เน็ตไม่มี แอปนี้เป็นเว็บจึงเปิดไม่ได้ — "
                        "โหลดสรุปเก็บไว้ในเครื่องก่อนออกเดินทาง")
             if _thai_font_path() is None:
-                st.warning("เซิร์ฟเวอร์ไม่มีฟอนต์ภาษาไทย รูปที่ได้จะเป็นสี่เหลี่ยม — "
-                           "เพิ่มไฟล์ `packages.txt` ที่มีบรรทัด `fonts-thai-tlwg` "
-                           "ไว้ข้าง ๆ app.py แล้ว reboot app")
+                st.warning("หาฟอนต์ภาษาไทยไม่ได้เลย (ทั้งในเครื่องและดาวน์โหลด) "
+                           "ตัวอักษรในรูปจะเป็นสี่เหลี่ยม — เพิ่มไฟล์ `packages.txt` "
+                           "ที่มีบรรทัด `fonts-thai-tlwg` แล้ว reboot app")
             _png = offline_sheet(trip_id, cur_trip, cur_date, members, me)
             st.download_button("⬇️ โหลดสรุปทริปเป็นรูป (ใช้ได้ตอนออฟไลน์)",
                                data=_png, file_name=f"trip_{trip_id}_offline.png",
