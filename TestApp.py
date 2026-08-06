@@ -101,6 +101,47 @@ html,body,
 }
 [data-testid="stMainBlockContainer"] { max-width: 100% !important; }
 
+/* ══ [FIX v30] ชั้นซ้อน (z-index) ต้องต่ำกว่าโหมดเต็มจอของ Streamlit ══
+   เดิมตั้งแถบบนไว้ 2147483647 (สูงสุดที่เบราว์เซอร์รับได้) เพราะเคยโดน
+   toolbar ของ Streamlit ทับ แต่พอกดขยายแผนที่เต็มจอ ชั้นเต็มจอของ Streamlit
+   อยู่ที่ 1000050 (ตรวจจากไฟล์ของ Streamlit เอง) จึงต่ำกว่าแถบบนเรา
+   → แถบบนไปทับปุ่มปิดเต็มจอที่มุมขวาบน กดออกไม่ได้
+   ตอนนี้ลดมาอยู่ 100000-100003 ซึ่งยังสูงกว่าเนื้อหาปกติมาก
+   แต่ต่ำกว่าเต็มจอ/ป๊อปอัพของ Streamlit จึงไม่ไปบังของพวกนั้น */
+
+/* [FIX v32] ปุ่มขยาย/หุบแผนที่ — ปกติ Streamlit ซ่อนไว้จนกว่าจะเอาเมาส์ไปชี้
+   บนมือถือไม่มีการชี้เมาส์ จึงหาปุ่มหุบกลับไม่เจอเลยเมื่อกดขยายไปแล้ว
+   บังคับให้เห็นตลอดพร้อมพื้นหลังทึบ จะได้มองออกว่ากดได้ */
+[data-testid="stElementToolbar"],
+[data-testid="stElementToolbarButton"],
+[data-testid="stElementToolbarButtonContainer"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+[data-testid="stElementToolbar"] {
+    background: rgba(255,255,255,.94) !important;
+    border: 1.5px solid #bfdbfe !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.14) !important;
+    transition: none !important;
+}
+/* ตอนเต็มจอ ดันปุ่มลงมาไม่ให้ชนแถบบนของเรา */
+[data-testid="stFullScreenFrame"] [data-testid="stElementToolbar"] {
+    top: 8px !important;
+    right: 12px !important;
+}
+
+/* [FIX v33] ถอดปุ่มขยายเต็มจอ "เฉพาะแผนที่" ตามที่ผู้ใช้ขอ
+   แผนที่เลื่อน/ซูมได้ในกรอบอยู่แล้ว ปุ่มเต็มจอจึงไม่ได้ช่วยอะไร
+   แต่ยังเก็บปุ่มไว้ให้รูปสลิป เพราะสลิปตัวหนังสือเล็ก ต้องขยายดูจริง ๆ */
+[data-testid="stFullScreenFrame"]:has([data-testid="stDeckGlJsonChart"]) [data-testid="stElementToolbar"],
+[data-testid="stFullScreenFrame"]:has(.stDeckGlJsonChart) [data-testid="stElementToolbar"] {
+    display: none !important;
+}
+/* ตอนเต็มจอ ให้เนื้อหาข้างในเลื่อนได้และไม่ถูกแถบบนเราบัง */
+[data-testid="stFullScreenFrame"] { z-index: auto; }
+
 /* ══ [FIX v25] แก้อาการกระพริบที่ขอบบนตอนเลื่อนหน้าจอ ══
    สาเหตุ: แถบบนสูงรวม 94px (navbar 50 + menubar 44) แต่เนื้อหาเริ่มที่ 102px
    เหลือช่องว่าง 8px ที่ "ไม่มีอะไรบัง" — เวลาเลื่อน เนื้อหาจะวิ่งผ่านช่องแคบ ๆ นี้
@@ -111,7 +152,7 @@ html,body,
     top: -2px; left: 0; right: 0;   /* -2px กันเส้นบางที่ขอบบนสุดตอน zoom ไม่ลงตัว */
     height: 108px;
     background: #dbeafe;
-    z-index: 2147483645;      /* [FIX v26] ดันขึ้นให้ชิดใต้ menubar กันเนื้อหาแทรก */
+    z-index: 100000;      /* [FIX v30] ใต้ menubar แต่เหนือเนื้อหา */
     pointer-events: none;
 }
 
@@ -171,7 +212,7 @@ html, body {
     top: 0;
     left: 0;
     right: 0;
-    z-index: 2147483647;   /* [FIX v3] สูงสุดเท่าที่ browser รับได้ */
+    z-index: 100002;   /* [FIX v30] ต่ำกว่าชั้นเต็มจอของ Streamlit (1000050) */
     font-family: var(--font-body);
 }
 .navbar-wrap .navbar {
@@ -194,7 +235,7 @@ div.st-key-userbtn {
     left: auto !important;
     width: auto !important;
     display: inline-flex !important;
-    z-index: 2147483647 !important;
+    z-index: 100002 !important;   /* [FIX v30] */
     margin: 0 !important; padding: 0 !important;
 }
 /* [FIX v7] เรียงลูกในคอนเทนเนอร์แนวนอน: [ป้ายออนไลน์][ป้ายแจ้งเตือน][ปุ่มโปรไฟล์]
@@ -315,7 +356,7 @@ div.st-key-menubar {
     position: fixed !important;
     top: 50px !important;
     left: 0 !important; right: 0 !important;
-    z-index: 2147483646 !important;   /* [FIX v3] */
+    z-index: 100001 !important;   /* [FIX v30] */
     background: #1e3a8a !important;
     padding: 0 !important; margin: 0 !important;
     border-bottom: 3px solid #60a5fa !important;
@@ -669,6 +710,19 @@ div[class*="st-key-tabbar"] .stButton button[kind="primary"] p { color: #1d4ed8 
 }
 .pk-none { background:#9ca3af; }
 
+/* [FIX v32] คุมความสูงแผนที่ไม่ให้ล้นทับปุ่มด้านล่าง
+   canvas ของ deck.gl บางครั้งขยายเกินคอนเทนเนอร์จนดันเนื้อหาอื่นตกจอ */
+[data-testid="stDeckGlJsonChart"],
+[data-testid="stDeckGlJsonChart"] > div,
+.stDeckGlJsonChart {
+    max-height: 320px !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+[data-testid="stFullScreenFrame"] [data-testid="stDeckGlJsonChart"] {
+    max-height: none !important;   /* ตอนเต็มจอให้ขยายได้ตามปกติ */
+}
+
 /* ══ [FIX v28] แคมป์: จุดกางเต็นท์ + พยากรณ์อากาศ ══ */
 .camp-loc {
     display:flex; align-items:center; gap:12px;
@@ -700,6 +754,30 @@ div[class*="st-key-tabbar"] .stButton button[kind="primary"] p { color: #1d4ed8 
 @media (max-width:600px) {
     .camp-sub { font-size:10.5px; }
     .camp-tmp { font-size:17px; }
+}
+
+/* ══ [FIX v34] ป้ายหมวดหมู่ + กราฟสรุปหมวด ══ */
+.bill-cat {
+    display:inline-block; color:#fff !important; border-radius:20px;
+    padding:1px 8px; font-size:10.5px; font-weight:600;
+    margin-left:7px; vertical-align:middle;
+}
+.cat-row {
+    display:flex; align-items:center; gap:10px;
+    background:#fff; border:1.5px solid #bfdbfe; border-radius:10px;
+    padding:9px 13px; margin-bottom:6px;
+}
+.cat-nm { width:92px; flex-shrink:0; font-size:13px; font-weight:600; color:#000 !important; }
+.cat-track { flex:1; height:9px; background:#eff6ff; border-radius:6px; overflow:hidden; }
+.cat-fill { height:100%; border-radius:6px; }
+.cat-amt {
+    width:76px; text-align:right; flex-shrink:0;
+    font-family:var(--font-display); font-weight:700; font-size:14px; color:#000 !important;
+}
+.cat-pct { width:38px; text-align:right; flex-shrink:0; font-size:12px; color:#6b7280 !important; }
+@media (max-width:600px) {
+    .cat-nm { width:74px; font-size:12px; }
+    .cat-amt { width:64px; font-size:13px; }
 }
 
 /* ══ CARDS ══ */
@@ -751,7 +829,7 @@ div[class*="st-key-tabbar"] .stButton button[kind="primary"] p { color: #1d4ed8 
    (st_autorefresh) ซึ่งจะล้าง timer ของ JS ทิ้งทุกครั้ง
    pointer-events:none เพื่อให้กดทะลุผ่านได้ ไม่บังปุ่มข้างหลัง */
 .flash-wrap {
-    position: fixed; inset: 0; z-index: 2147483647;
+    position: fixed; inset: 0; z-index: 100003;
     display: flex; align-items: center; justify-content: center;
     pointer-events: none;
 }
@@ -814,6 +892,16 @@ DB_FILE = os.environ.get("TRIP_DB_PATH", "trip_database.db")
 TZ      = ZoneInfo("Asia/Bangkok")
 MAX_UPLOAD_MB = 8
 
+# [FIX v39] ── ค่าคงที่ที่ปรับจูนใหม่ ─────────────────────────
+#   HEARTBEAT_EVERY: เดิม heartbeat() เขียน DB ทุก rerun = ทุก 3 วิ/คน
+#   10 คนออนไลน์ = เขียน 200 ครั้ง/นาที ทั้งที่ข้อมูลแทบไม่เปลี่ยน
+#   นี่คือต้นเหตุหลักของ "database is locked" ที่ไล่แก้มาหลายเวอร์ชัน
+#   ตอนนี้เขียนจริงทุก 30 วิ แล้วขยายหน้าต่าง "ออนไลน์" เป็น 90 วิให้สอดคล้อง
+HEARTBEAT_EVERY  = 30
+ONLINE_WINDOW    = 90
+LOGIN_MAX_TRY    = 5      # [FIX v39] PIN 4 หลักมีแค่ 10,000 แบบ ต้องมีเบรก
+LOGIN_LOCK_SEC   = 300
+
 BANK_LIST = ["-- เลือกธนาคาร --","กสิกรไทย (KBank)","ไทยพาณิชย์ (SCB)","กรุงไทย (KTB)",
              "กรุงเทพ (BBL)","กรุงศรีอยุธยา (BAY)","ทหารไทยธนชาต (TTB)","ออมสิน (GSB)","ธ.ก.ส.","ยูโอบี (UOB)"]
 
@@ -828,6 +916,23 @@ def db():
     c.execute("PRAGMA busy_timeout=15000")
     c.execute("PRAGMA synchronous=NORMAL")
     return c
+
+def row_get(row, key, default=None):
+    """[FIX v39] อ่านคอลัมน์จาก sqlite3.Row / pandas Series แบบไม่ระเบิด
+    จำเป็นเพราะแถวเก่าที่บันทึกก่อนมีคอลัมน์ใหม่จะไม่มี key นั้น
+    ของเดิมเขียน try/except ซ้ำกันหลายที่ รวมมาไว้ที่เดียวจะแก้ง่ายกว่า"""
+    try:
+        v = row[key]
+    except (KeyError, IndexError, TypeError):
+        return default
+    if v is None:
+        return default
+    try:
+        if pd.isna(v):
+            return default
+    except (TypeError, ValueError):
+        pass
+    return v
 
 # ── [FIX v11] เวลา ────────────────────────────────────────────
 def now_str():
@@ -886,6 +991,13 @@ def init_db():
         done INTEGER DEFAULT 0, note TEXT,
         added_by TEXT, expense_id INTEGER,
         timestamp DATETIME)""")
+    # [FIX v39] บันทึกว่าใครแก้อะไรเมื่อไหร่ — ในแอปที่เกี่ยวกับเงินและ
+    #   ทุกคนแก้บิลของกันได้ "ใครแก้ยอดนี้" สำคัญต่อความไว้ใจในกลุ่ม
+    #   มากกว่าฟีเจอร์ไหน ๆ ของเดิมแก้แล้วไม่เหลือร่องรอยเลย
+    cur.execute("""CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, trip_id INTEGER,
+        actor TEXT, action TEXT, target TEXT, detail TEXT,
+        timestamp TEXT)""")
     cur.execute('''CREATE TABLE IF NOT EXISTS notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT, trip_id INTEGER,
         to_user TEXT, from_user TEXT, message TEXT,
@@ -910,7 +1022,16 @@ def init_db():
     for _c, _t in [("place_name","TEXT"), ("lat","REAL"), ("lon","REAL")]:
         try: conn.execute(f"ALTER TABLE trips ADD COLUMN {_c} {_t}")
         except sqlite3.OperationalError: pass
+    # [FIX v34] หมวดหมู่ค่าใช้จ่าย + เวลาที่ปิดทริป
+    try: conn.execute("ALTER TABLE expenses ADD COLUMN category TEXT")
+    except sqlite3.OperationalError: pass
+    try: conn.execute("ALTER TABLE trips ADD COLUMN closed_at TEXT")
+    except sqlite3.OperationalError: pass
     try: conn.execute("ALTER TABLE expenses ADD COLUMN split_detail TEXT")
+    except sqlite3.OperationalError: pass
+    # [FIX v39] วันเวลาที่บันทึกบิล — ทริป 3 วันเดิมแยกไม่ออกเลยว่าบิลไหนวันไหน
+    #   เพราะเรียงได้แค่ตาม id บิลเก่าจะเป็น NULL (ไม่ทราบวัน) ซึ่งยอมรับได้
+    try: conn.execute("ALTER TABLE expenses ADD COLUMN created_at TEXT")
     except sqlite3.OperationalError: pass
     # [FIX v22] สลิปยืนยันการโอน
     try: conn.execute("ALTER TABLE settlements ADD COLUMN slip_blob BLOB")
@@ -932,11 +1053,25 @@ def init_db():
         "CREATE INDEX IF NOT EXISTS ix_notif_trip ON notifications(trip_id, to_user, is_read)",
         "CREATE INDEX IF NOT EXISTS ix_settle     ON settlements(trip_id)",
         "CREATE INDEX IF NOT EXISTS ix_packing    ON packing(trip_id)",
+        "CREATE INDEX IF NOT EXISTS ix_audit      ON audit_log(trip_id, id)",
     ]:
         try: conn.execute(ddl)
         except sqlite3.OperationalError: pass
 
     conn.commit(); conn.close()
+
+# ── [FIX v39] บันทึกร่องรอยการแก้ไข ───────────────────────────
+def audit(trip_id, actor, action, target="", detail=""):
+    """เขียนลง audit_log — ห้ามทำให้งานหลักล้มถ้าบันทึกไม่สำเร็จ
+    จึงกลืน sqlite error ที่นี่โดยเจตนา (ต่างจากที่อื่นในไฟล์นี้)"""
+    try:
+        c = db()
+        c.execute("INSERT INTO audit_log (trip_id,actor,action,target,detail,timestamp) "
+                  "VALUES (?,?,?,?,?,?)",
+                  (trip_id, actor, action, str(target)[:120], str(detail)[:300], now_str()))
+        c.commit(); c.close()
+    except sqlite3.Error:
+        pass
 
 def compress_image(f):
     if f is None: return None
@@ -974,6 +1109,48 @@ def avatar_thumb_uri(blob, px=96):
     img = Image.open(io.BytesIO(blob)); img.thumbnail((px, px), Image.LANCZOS)
     buf = io.BytesIO(); img.save(buf, format="JPEG", quality=72)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+
+# ── [FIX v39] โหลดรูปสลิปแบบขี้เกียจ ───────────────────────────
+#   ปัญหาเดิม: แท็บ "ประวัติ" ดึง image_blob ของ *ทุกบิล* ออกมาทุก 3 วินาที
+#   เพื่อทำ thumbnail 48px ทริปละ 30 บิล × รูปละ ~150KB = อ่าน 4.5MB จากดิสก์
+#   ทุกรอบรีเฟรช ทั้งที่ผลลัพธ์เหมือนเดิมเป๊ะ
+#   ทางแก้: query หลักดึงแค่ LENGTH(image_blob) ซึ่ง SQLite ตอบได้จาก header
+#   ไม่ต้องอ่านตัว blob แล้วค่อยโหลดรูปจริงผ่านฟังก์ชันที่แคชไว้
+#   ใช้ (id, ความยาว) เป็น key — ถ้ามีคนเปลี่ยนรูป ความยาวเปลี่ยน แคชก็หลุดเอง
+@st.cache_data(show_spinner=False, max_entries=256)
+def bill_img_bytes(eid, img_len, px=600):
+    if not img_len: return None
+    c = db()
+    r = c.execute("SELECT image_blob FROM expenses WHERE id=?", (eid,)).fetchone()
+    c.close()
+    b = r["image_blob"] if r else None
+    if not b: return None
+    im = Image.open(io.BytesIO(b))
+    if im.mode in ("RGBA","P","LA"): im = im.convert("RGB")
+    im.thumbnail((px, px), Image.LANCZOS)
+    buf = io.BytesIO(); im.save(buf, format="JPEG", quality=78)
+    return buf.getvalue()
+
+@st.cache_data(show_spinner=False, max_entries=256)
+def bill_img_uri(eid, img_len, px=96):
+    b = bill_img_bytes(eid, img_len, px)
+    if not b: return None
+    return "data:image/jpeg;base64," + base64.b64encode(b).decode()
+
+@st.cache_data(show_spinner=False, max_entries=128)
+def slip_img_bytes(sid, slip_len, px=600):
+    """เหมือนกันแต่สำหรับสลิปการโอนในตาราง settlements"""
+    if not slip_len: return None
+    c = db()
+    r = c.execute("SELECT slip_blob FROM settlements WHERE id=?", (sid,)).fetchone()
+    c.close()
+    b = r["slip_blob"] if r else None
+    if not b: return None
+    im = Image.open(io.BytesIO(b))
+    if im.mode in ("RGBA","P","LA"): im = im.convert("RGB")
+    im.thumbnail((px, px), Image.LANCZOS)
+    buf = io.BytesIO(); im.save(buf, format="JPEG", quality=78)
+    return buf.getvalue()
 
 # [FIX v21] สีประจำตัวของแต่ละคน — ได้จากการ hash ชื่อ จึงคงที่เสมอ
 #   ทั้งในบิล แชท และสรุปเงิน ทำให้กวาดตาหาตัวเองเจอเร็วขึ้น
@@ -1020,6 +1197,12 @@ def rename_user(old, new):
     c.execute("UPDATE settlements   SET creditor=?    WHERE creditor=?",    (new, old))
     c.execute("UPDATE notifications SET to_user=?     WHERE to_user=?",     (new, old))
     c.execute("UPDATE notifications SET from_user=?   WHERE from_user=?",   (new, old))
+    # [FIX v39] ของเดิมลืมสองตารางนี้ — คนที่รับหน้าที่หิ้วของและ Event
+    #   ที่ตัวเองสร้าง จะกลายเป็นของคนชื่อเก่าที่ไม่มีอยู่แล้ว
+    #   ผลคือหลังเปลี่ยนชื่อ จะลบ Event ตัวเองไม่ได้อีกเลย
+    c.execute("UPDATE packing       SET assignee=?    WHERE assignee=?",    (new, old))
+    c.execute("UPDATE packing       SET added_by=?    WHERE added_by=?",    (new, old))
+    c.execute("UPDATE trips         SET created_by=?  WHERE created_by=?",  (new, old))
     c.execute("DELETE FROM online_status WHERE name=?", (new,))
     c.execute("UPDATE online_status SET name=?        WHERE name=?",        (new, old))
     # split_members เก็บเป็น "a,b,c" → ต้องแยกแล้วประกอบใหม่ทีละแถว
@@ -1028,11 +1211,26 @@ def rename_user(old, new):
         if old in parts:
             c.execute("UPDATE expenses SET split_members=? WHERE id=?",
                       (",".join(new if p == old else p for p in parts), r["id"]))
+    # split_detail เก็บชื่อคนไว้เป็น key ของ JSON ด้วย ถ้าไม่แก้ วิธีหาร
+    # แบบ "ระบุยอดเอง" จะหาคนชื่อใหม่ไม่เจอ แล้วยอดที่ระบุไว้จะหายไปเงียบ ๆ
+    for r in c.execute("SELECT id, split_detail FROM expenses "
+                       "WHERE split_detail IS NOT NULL AND split_detail<>''").fetchall():
+        try:
+            d = json.loads(r["split_detail"])
+            vals = d.get("values") or {}
+            if old in vals:
+                vals[new] = vals.pop(old)
+                d["values"] = vals
+                c.execute("UPDATE expenses SET split_detail=? WHERE id=?",
+                          (json.dumps(d), r["id"]))
+        except (ValueError, TypeError, AttributeError):
+            pass
     c.commit(); c.close()
     return True, ""
 
 # ── [FIX v11] สำรอง / กู้คืนข้อมูล ────────────────────────────
-BACKUP_TABLES = ["all_users","trips","members","expenses","settlements","notifications","packing"]
+BACKUP_TABLES = ["all_users","trips","members","expenses","settlements",
+                 "notifications","packing","audit_log"]
 
 def export_backup():
     """[FIX v11] Streamlit Community Cloud ใช้ filesystem ชั่วคราว —
@@ -1042,7 +1240,12 @@ def export_backup():
     c = db(); out = {"exported_at": now_str(), "version": 1, "data": {}}
     for t in BACKUP_TABLES:
         rows = []
-        for r in c.execute(f"SELECT * FROM {t}").fetchall():
+        try:
+            cur = c.execute(f"SELECT * FROM {t}")
+        except sqlite3.OperationalError:
+            out["data"][t] = rows   # ตารางยังไม่มีในฐานข้อมูลรุ่นเก่า
+            continue
+        for r in cur.fetchall():
             d = {}
             for k in r.keys():
                 v = r[k]
@@ -1059,14 +1262,26 @@ def import_backup(raw, wipe=True):
         data = payload["data"]
     except (ValueError, KeyError, UnicodeDecodeError) as e:
         return False, f"ไฟล์ไม่ถูกต้อง: {e}"
+    if not isinstance(data, dict):
+        return False, "ไฟล์ไม่ถูกต้อง: โครงสร้างข้อมูลผิดรูป"
+    # [FIX v39] กันการกู้คืนไฟล์ว่างทับข้อมูลจริง — เคสที่เจ็บที่สุดคือ
+    #   หยิบไฟล์ผิด (เช่นไฟล์ที่ export ตอนระบบยังว่าง) แล้วเลือก "ล้างของเดิม"
+    #   ข้อมูลทั้งกลุ่มหายทันทีโดยกู้กลับไม่ได้
+    if wipe and not any(data.get(t) for t in BACKUP_TABLES):
+        return False, "ไฟล์นี้ไม่มีข้อมูลเลย — ยกเลิกการเขียนทับเพื่อความปลอดภัย"
     c = db()
     try:
         for t in BACKUP_TABLES:
             if t not in data: continue
+            try:
+                have = {r[1] for r in c.execute(f"PRAGMA table_info({t})").fetchall()}
+            except sqlite3.OperationalError:
+                continue
+            if not have: continue
             if wipe: c.execute(f"DELETE FROM {t}")
-            have = {r[1] for r in c.execute(f"PRAGMA table_info({t})").fetchall()}
             for row in data[t]:
                 row = {k: v for k, v in row.items() if k in have}   # ข้ามคอลัมน์ที่ schema ใหม่ไม่มี
+                if not row: continue
                 for k, v in row.items():
                     if isinstance(v, dict) and "__b64__" in v:
                         row[k] = base64.b64decode(v["__b64__"])
@@ -1298,7 +1513,13 @@ def _thai_font(size):
     return ImageFont.load_default()
 
 def offline_sheet(trip_id, trip_name, trip_date, members, me):
-    """รวมยอดที่ต้องจ่าย แผนโอน QR พร้อมเพย์ และของที่ต้องหิ้ว เป็นรูปเดียว"""
+    """รวมยอดที่ต้องจ่าย แผนโอน QR พร้อมเพย์ และของที่ต้องหิ้ว เป็นรูปเดียว
+
+    [FIX v39] ฟังก์ชันนี้ *แพงมาก* (วาดผืน 820×2400 + สร้าง QR + วาดข้อความ)
+    ของเดิมถูกเรียกตรง ๆ ตอนสร้าง st.download_button ซึ่งต้องมีข้อมูลพร้อมเสมอ
+    → รูปถูกวาดใหม่ทุก 3 วินาทีที่ค้างอยู่แท็บแคมป์ ทั้งที่แทบไม่มีใครกดโหลด
+    ตอนนี้ย้ายไปเรียกเฉพาะตอนกดปุ่ม "สร้างไฟล์" แล้วเก็บผลไว้ใน session_state
+    """
     net, exps, _paid = compute_net(trip_id, members)
     plan = settle_plan(net)
     c = db()
@@ -1374,6 +1595,46 @@ def offline_sheet(trip_id, trip_name, trip_date, members, me):
     return buf.getvalue()
 
 
+# ── [FIX v34] หมวดหมู่ค่าใช้จ่าย ────────────────────────────────
+#   ไว้ตอบว่า "ทริปนี้หมดกับอะไรเยอะสุด" เอาไปวางแผนทริปหน้าได้
+CATEGORIES = [
+    ("อาหาร",    "🍜", "#ea580c"),
+    ("ที่พัก",    "🏕️", "#7c3aed"),
+    ("เดินทาง",  "🚗", "#0891b2"),
+    ("อุปกรณ์",  "🎒", "#16a34a"),
+    ("เครื่องดื่ม","🍺", "#ca8a04"),
+    ("อื่น ๆ",    "📦", "#6b7280"),
+]
+CAT_NAMES = [c[0] for c in CATEGORIES]
+CAT_ICON  = {c[0]: c[1] for c in CATEGORIES}
+CAT_COLOR = {c[0]: c[2] for c in CATEGORIES}
+
+def cat_of(row):
+    """หมวดของบิล — บิลเก่าที่ยังไม่มีหมวดให้ถือว่า 'อื่น ๆ'"""
+    v = row_get(row, 'category')
+    return v if v in CAT_NAMES else "อื่น ๆ"
+
+# ── [FIX v34] สถานะทริป ─────────────────────────────────────────
+#   status: 0 = ใช้งานอยู่, 1 = อยู่ถังขยะ, 2 = ปิดแล้ว (ล็อกไม่ให้แก้)
+#   ที่ต้องมีสถานะปิด เพราะเดิมสมาชิกคนไหนก็แก้ยอดหรือลบบิลได้ตลอด
+#   แม้จ่ายกันจบไปเป็นเดือนแล้ว เผลอกดทีเดียวยอดทั้งทริปเปลี่ยน
+TRIP_ACTIVE, TRIP_TRASH, TRIP_CLOSED = 0, 1, 2
+
+def trip_is_closed(tid):
+    if not tid: return False
+    c = db()
+    r = c.execute("SELECT status FROM trips WHERE id=?", (tid,)).fetchone()
+    c.close()
+    return bool(r) and r["status"] == TRIP_CLOSED
+
+def locked_notice(closed):
+    """แสดงแถบเตือนเมื่อทริปถูกปิด — คืน True ถ้าปิดอยู่"""
+    if closed:
+        st.info("🔒 ทริปนี้ปิดแล้ว — ดูย้อนหลังได้อย่างเดียว "
+                "ถ้าต้องแก้ ให้เปิดทริปอีกครั้งที่เมนู จัดการ → Events")
+    return closed
+
+
 def empty_state(icon, title, sub, btn_label=None, btn_key=None, goto=None):
     """[FIX v21] หน้าจอว่างที่บอกทางต่อ — ของเดิมใช้ st.info('ยังไม่มีบิล')
     ซึ่งบอกแค่ว่าไม่มี แต่ไม่บอกว่าให้ทำอะไรต่อ กลายเป็นทางตัน
@@ -1444,30 +1705,47 @@ def split_amounts(amount, names, detail=None, seed=0):
     return {n: out.get(n, 0) / 100.0 for n in names}
 
 
+# [FIX v39] แคชผลการคำนวณภายใน "รอบการรันเดียว"
+#   Streamlit รันสคริปต์ใหม่ทั้งไฟล์ทุก rerun ตัวแปรระดับโมดูลจึงเกิดใหม่เสมอ
+#   = ใช้เป็นแคชอายุสั้นได้อย่างปลอดภัย ไม่ต้องกังวลว่าข้อมูลจะค้างข้ามรอบ
+#   ที่ต้องมีเพราะ compute_net ถูกเรียกซ้ำหลายจุดในรอบเดียว (ยอดหัวหน้าหลัก
+#   + แท็บสรุปเงิน + แท็บยอดรวมทุกทริปที่วนทุกทริป) ทุกครั้งเปิด DB ใหม่หมด
+_NET_CACHE = {}
+
 def compute_net(trip_id, members):
     """[FIX v21] คำนวณยอดสุทธิรายคน — แยกออกมาเพราะต้องใช้ทั้งที่ยอดสรุปด้านบน
     ของหน้าหลัก และในแท็บสรุปเงิน ถ้าเขียนซ้ำสองที่แล้วแก้ไม่ครบจะเพี้ยนคนละทาง
     คืน (net, exps, paid_rows)"""
+    _key = (trip_id, tuple(sorted(members)))
+    if _key in _NET_CACHE:
+        return _NET_CACHE[_key]
     c = db()
-    exps = c.execute("SELECT id,description,amount,payer_name,split_members,split_detail "
+    # [FIX v34] ต้องดึง category มาด้วย ไม่งั้นกราฟสรุปหมวดจะเห็นทุกบิลเป็น "อื่น ๆ"
+    exps = c.execute("SELECT id,description,amount,payer_name,split_members,split_detail,"
+                     "category,created_at "
                      "FROM expenses WHERE trip_id=?", (trip_id,)).fetchall()
-    paid = c.execute("SELECT id,debtor,creditor,amount,timestamp,slip_blob FROM settlements "
+    # [FIX v39] ดึงแค่ความยาวสลิป ไม่ดึงตัวรูป — รูปโหลดตอนกางดูจริงเท่านั้น
+    paid = c.execute("SELECT id,debtor,creditor,amount,timestamp,"
+                     "LENGTH(slip_blob) AS slip_len FROM settlements "
                      "WHERE trip_id=? ORDER BY id DESC", (trip_id,)).fetchall()
     c.close()
     inv = set(members)
     for r in exps:
-        inv.add(r['payer_name']); inv.update(r['split_members'].split(","))
+        inv.add(r['payer_name'])
+        inv.update(n for n in r['split_members'].split(",") if n)   # [FIX v39] กันชื่อว่าง
     for pr in paid:
         inv.add(pr['debtor']); inv.add(pr['creditor'])
+    inv.discard(None); inv.discard("")
     net = {m: 0.0 for m in inv}
     for r in exps:
-        net[r['payer_name']] += r['amount']
+        net[r['payer_name']] = net.get(r['payer_name'], 0.0) + r['amount']
         for m2, v in split_amounts(r['amount'], r['split_members'].split(","),
                                    r['split_detail'], seed=r['id']).items():
-            net[m2] -= v
+            net[m2] = net.get(m2, 0.0) - v
     for pr in paid:
-        net[pr['debtor']]   += pr['amount']
-        net[pr['creditor']] -= pr['amount']
+        net[pr['debtor']]   = net.get(pr['debtor'], 0.0)   + pr['amount']
+        net[pr['creditor']] = net.get(pr['creditor'], 0.0) - pr['amount']
+    _NET_CACHE[_key] = (net, exps, paid)
     return net, exps, paid
 
 
@@ -1516,16 +1794,27 @@ def tab_bar(state_key, labels, default=0):
                 st.rerun()
     return st.session_state[state_key]
 
-def heartbeat(u):
-    if u:
-        t = now_str()   # [FIX v11] เวลาไทย ไม่ใช่เวลาเซิร์ฟเวอร์
-        c = db(); c.execute("INSERT INTO online_status (name,last_seen) VALUES (?,?) "
-                            "ON CONFLICT(name) DO UPDATE SET last_seen=excluded.last_seen",(u,t))
-        c.commit(); c.close()
+def heartbeat(u, force=False):
+    """[FIX v39] เขียนสถานะออนไลน์แบบมีเบรก
+    ของเดิมเขียนทุก rerun = ทุก 3 วิ/คน ซึ่งเป็นการเขียนที่ต้องใช้ล็อกทั้งไฟล์
+    หลายคนพร้อมกัน = แย่งล็อกกันตลอดเวลา (ที่มาของ 'database is locked')
+    ข้อมูลนี้ใช้แค่โชว์จุดเขียว/เทา ความสดระดับ 30 วินาทีเพียงพอเกินพอ
+    force=True ใช้ตอนเพิ่งล็อกอิน เพื่อให้ขึ้นออนไลน์ทันทีไม่ต้องรอ"""
+    if not u:
+        return
+    if not force:
+        last = st.session_state.get("_hb_at", 0.0)
+        if time.time() - last < HEARTBEAT_EVERY:
+            return
+    st.session_state["_hb_at"] = time.time()
+    t = now_str()   # [FIX v11] เวลาไทย ไม่ใช่เวลาเซิร์ฟเวอร์
+    c = db(); c.execute("INSERT INTO online_status (name,last_seen) VALUES (?,?) "
+                        "ON CONFLICT(name) DO UPDATE SET last_seen=excluded.last_seen",(u,t))
+    c.commit(); c.close()
 
 def online_now():
     c = db(); rows = c.execute("SELECT name FROM online_status WHERE last_seen>=?",
-                               (now_minus(15),)).fetchall(); c.close()
+                               (now_minus(ONLINE_WINDOW),)).fetchall(); c.close()
     return [r["name"] for r in rows]
 
 # [FIX v23] ตรวจ schema ก่อนแล้วค่อยตัดสินใจว่าจะ init ไหม
@@ -1544,13 +1833,14 @@ def online_now():
 #   ไม่ต้องพึ่งการจำบัมพ์เลขเวอร์ชันด้วยมือ
 SCHEMA_COLS = {
     "all_users":     {"promptpay","bank_name","bank_account","avatar_blob"},
-    "trips":         {"trip_date","created_by","place_name","lat","lon"},
-    "expenses":      {"split_detail"},
+    "trips":         {"trip_date","created_by","place_name","lat","lon","closed_at"},
+    "expenses":      {"split_detail","category","created_at"},
     "settlements":   {"slip_blob"},
     "notifications": {"is_auto","is_read","timestamp"},
     "members":       {"trip_id","name"},
     "online_status": {"name","last_seen"},
     "packing":       {"trip_id","item","assignee","done","expense_id"},
+    "audit_log":     {"trip_id","actor","action","target","detail","timestamp"},
 }
 
 def schema_ready():
@@ -1592,7 +1882,8 @@ conn0 = db()
 _urows    = conn0.execute("SELECT name, avatar_blob FROM all_users").fetchall()
 all_users = [r["name"] for r in _urows]
 avatars   = {r["name"]: r["avatar_blob"] for r in _urows}   # [FIX v6] รูปโปรไฟล์
-trips_df  = pd.read_sql_query("SELECT * FROM trips WHERE status=0", conn0)
+# [FIX v34] รวมทริปที่ปิดแล้ว (status=2) ด้วย — ยังต้องเปิดดูย้อนหลังได้
+trips_df  = pd.read_sql_query("SELECT * FROM trips WHERE status IN (0,2) ORDER BY status, id DESC", conn0)
 conn0.close()
 
 if not trips_df.empty:
@@ -1607,12 +1898,16 @@ if st.session_state["trip_id"] not in tid_list:
 
 trip_id = st.session_state["trip_id"]
 cur_trip = cur_date = cur_owner = None
+cur_closed = False
+cur_closed_at = None
 if trip_id and not trips_df.empty:
     row_t = trips_df[trips_df["id"]==trip_id]
     if not row_t.empty:
-        cur_trip = row_t.iloc[0]["name"]; cur_date = row_t.iloc[0]["trip_date"]
-        cur_owner = row_t.iloc[0].get("created_by")   # [FIX v24] ผู้สร้าง Event
-        if cur_owner is not None and pd.isna(cur_owner): cur_owner = None
+        _rt = row_t.iloc[0]
+        cur_trip = _rt["name"]; cur_date = row_get(_rt, "trip_date")
+        cur_owner = row_get(_rt, "created_by")           # [FIX v24] ผู้สร้าง Event
+        cur_closed = int(row_get(_rt, "status", 0) or 0) == TRIP_CLOSED
+        cur_closed_at = row_get(_rt, "closed_at")
 
 members = []
 if trip_id:
@@ -1766,7 +2061,9 @@ if menu == "home":
 
         # ── TAB 1 ──────────────────────────────────────────────
         if _ht == 0:
-            if not members:
+            if locked_notice(cur_closed):     # [FIX v34] ทริปปิดแล้ว = เพิ่มบิลไม่ได้
+                pass
+            elif not members:
                 empty_state("👥", "ทริปนี้ยังไม่มีสมาชิก",
                             "เพิ่มเพื่อนเข้าทริปก่อน แล้วค่อยเริ่มบันทึกบิล",
                             "👥 ไปเพิ่มสมาชิก", "go_add_mem", ("menu", "manage"))
@@ -1779,11 +2076,17 @@ if menu == "home":
                     with c2:
                         my_idx = members.index(me) if me in members else 0
                         payer  = st.selectbox("👤 คนสำรองจ่าย:", members, index=my_idx)
+                        _cat   = st.selectbox("🏷️ หมวดหมู่:",   # [FIX v34]
+                                              [f"{CAT_ICON[n]} {n}" for n in CAT_NAMES])
                         fup    = st.file_uploader("📎 สลิป:", type=['jpg','png','jpeg'])
                     st.markdown("**👥 ร่วมหาร:**")
                     nc = min(len(members),5)
                     sc = st.columns(nc)
-                    split_to = [m for i,m in enumerate(members) if sc[i%nc].checkbox(m, value=True, key=f"sp_{m}")]
+                    # [FIX v39] ผูก key กับ trip_id ด้วย — ของเดิมใช้ "sp_{ชื่อ}" เฉย ๆ
+                    #   พอสลับไปทริปอื่นที่มีคนชื่อเดียวกัน Streamlit จะจำค่าที่ติ๊กไว้
+                    #   จากทริปก่อนมาใช้ต่อ ทำให้บางคนหลุดจากการหารโดยไม่มีใครสังเกต
+                    split_to = [m for i,m in enumerate(members)
+                                if sc[i%nc].checkbox(m, value=True, key=f"sp_{trip_id}_{m}")]
 
                     # [FIX v22] หารไม่เท่ากัน — ของเดิมหารเท่ากันเสมอ ซึ่งไม่ตรงกับ
                     #   การใช้จริง (คนไม่กินเหล้า ห้องพักคนละแบบ ใครสั่งเพิ่มจ่ายเพิ่ม)
@@ -1802,7 +2105,7 @@ if menu == "home":
                                     m, min_value=0.0,
                                     value=(0.0 if _mode=="ระบุยอดเอง" else 1.0),
                                     step=(10.0 if _mode=="ระบุยอดเอง" else 1.0),
-                                    key=f"sv_{m}")
+                                    key=f"sv_{trip_id}_{m}")
 
                     if st.form_submit_button("💾 บันทึกบิล", type="primary", use_container_width=True):
                         if fup and fup.size > MAX_UPLOAD_MB*1024*1024:
@@ -1818,59 +2121,100 @@ if menu == "home":
                                 _det = None
                             blob = compress_image(fup)
                             c = db()
-                            cur_ = c.execute("INSERT INTO expenses (trip_id,description,amount,payer_name,split_members,image_blob,split_detail) VALUES (?,?,?,?,?,?,?)",
-                                      (trip_id,desc,amt,payer,",".join(split_to),blob,_det))
+                            cur_ = c.execute(
+                                "INSERT INTO expenses (trip_id,description,amount,payer_name,"
+                                "split_members,image_blob,split_detail,category,created_at) "
+                                "VALUES (?,?,?,?,?,?,?,?,?)",
+                                (trip_id,desc,amt,payer,",".join(split_to),blob,_det,
+                                 _cat.split(" ",1)[-1], now_str()))
                             c.commit()
-                            _shares = split_amounts(amt, split_to, _det, seed=cur_.lastrowid or 0)
+                            _eid = cur_.lastrowid or 0
+                            _shares = split_amounts(amt, split_to, _det, seed=_eid)
                             for m2 in split_to:
                                 if m2!=payer:
                                     msg=f"📌 บิลใหม่: '{desc}'\n💰 {amt:,.2f} บาท | จ่ายโดย: {payer}\n💸 ส่วนคุณ: {_shares.get(m2,0):,.2f} บาท"
                                     c.execute("INSERT INTO notifications (trip_id,to_user,from_user,message,is_auto,is_read,timestamp) VALUES (?,?,'ระบบสรุปยอด',?,1,0,?)",(trip_id,m2,msg,now_str()))
                             c.commit(); c.close()
+                            audit(trip_id, me, "เพิ่มบิล", desc, f"{amt:,.2f} ฿ · จ่ายโดย {payer}")
                             flash(f"บันทึก '{desc}' แล้ว!", "ok"); st.rerun()
                         else: st.error("⚠️ กรอกข้อมูลให้ครบ")
 
         # ── TAB 2 ──────────────────────────────────────────────
         if _ht == 1:
             # [FIX v11] เดิม SELECT * ดึง image_blob ของ "ทุกบิล" มาทุก 3 วินาที
-            #   ทริปละ 30 บิล = โหลดรูปหลายเมกะซ้ำ ๆ ฟรี ๆ
-            #   ตอนนี้ดึงแค่ flag ว่ามีรูปไหม แล้วค่อยโหลด blob ตอนกางบิลจริง
-            # [FIX v21] ดึง thumbnail เล็ก ๆ มาด้วย (ไม่ใช่รูปเต็ม) เพื่อโชว์ในรายการ
-            #   สลิปคือหลักฐานจริงของโดเมนนี้ เดิมต้องกดเปิด expander ทีละใบถึงจะเห็น
+            # [FIX v39] ตอนนี้ดึงแค่ LENGTH(image_blob) — ตัว blob โหลดผ่าน
+            #   bill_img_uri() ที่แคชด้วย (id, ความยาว) จึงอ่านดิสก์แค่ครั้งเดียว
+            #   ต่อรูป ไม่ใช่ทุก 3 วินาทีเหมือนเดิม
             c = db(); exps = c.execute(
-                "SELECT id,description,amount,payer_name,split_members,split_detail,image_blob,"
-                "       (image_blob IS NOT NULL) AS has_img "
+                "SELECT id,description,amount,payer_name,split_members,split_detail,category,"
+                "       created_at, LENGTH(image_blob) AS img_len "
                 "FROM expenses WHERE trip_id=? ORDER BY id DESC",(trip_id,)).fetchall(); c.close()
+            locked_notice(cur_closed)
             if not exps:
                 empty_state("🧾", "ยังไม่มีบิลในทริปนี้",
                             "บิลที่บันทึกไว้จะมาอยู่ตรงนี้ พร้อมรูปสลิปและรายชื่อคนหาร",
                             "➕ ไปเพิ่มบิล", "go_hist_add", ("tab_home", 0))
             else:
-                for row in exps:
-                    sl = row['split_members'].split(",")
+                # [FIX v34] ค้นหา + กรอง — ทริปยาว ๆ 30+ บิล หาบิลเดียวยากมาก
+                _f1, _f2, _f3 = st.columns([2.2, 1.4, 1.4])
+                _q = _f1.text_input("ค้นหา", placeholder="🔍 พิมพ์ชื่อรายการ...",
+                                    key="bill_q", label_visibility="collapsed")
+                _payers = ["ทุกคน"] + sorted({r['payer_name'] for r in exps})
+                _fp = _f2.selectbox("คนจ่าย", _payers, key="bill_payer",
+                                    label_visibility="collapsed")
+                _cats = ["ทุกหมวด"] + [n for n in CAT_NAMES if any(cat_of(r) == n for r in exps)]
+                _fc = _f3.selectbox("หมวด", _cats, key="bill_cat",
+                                    label_visibility="collapsed")
+
+                _rows = [r for r in exps
+                         if (not _q.strip() or _q.strip().lower() in r['description'].lower())
+                         and (_fp == "ทุกคน" or r['payer_name'] == _fp)
+                         and (_fc == "ทุกหมวด" or cat_of(r) == _fc)]
+                if len(_rows) != len(exps):
+                    st.caption(f"แสดง {len(_rows)} จาก {len(exps)} บิล "
+                               f"· รวม {sum(r['amount'] for r in _rows):,.2f} ฿")
+                if not _rows:
+                    st.info("ไม่พบบิลที่ตรงกับเงื่อนไข — ลองลบคำค้นหรือเปลี่ยนตัวกรอง")
+
+                for row in _rows:
+                    sl = [n for n in row['split_members'].split(",") if n]
+                    if not sl:
+                        # [FIX v39] บิลที่ไม่มีคนหารเลย (เกิดจากบั๊กฟอร์มแก้ไขรุ่นเก่า)
+                        #   ต้องเตือนให้ไปแก้ ไม่ใช่ปล่อยให้ยอดทั้งทริปเพี้ยนเงียบ ๆ
+                        st.error(f"⚠️ บิล '{row['description']}' ไม่มีคนหารเลย "
+                                 f"— ยอดรวมของทริปจะไม่ตรง กรุณาแก้ไขหรือลบบิลนี้")
+                        sl = [row['payer_name']]
                     # [FIX v22] ใช้ split_amounts เพื่อให้ตรงกับที่คำนวณจริง
                     _sh_map = split_amounts(row['amount'], sl, row['split_detail'], seed=row['id'])
                     _uneq = len(set(round(v,2) for v in _sh_map.values())) > 1
                     _mine = _sh_map.get(me)
                     # แถบสรุปพร้อม thumbnail สลิป — สแกนได้เร็วโดยไม่ต้องกางทีละใบ
-                    _th = avatar_thumb_uri(row['image_blob'], 96) if row['has_img'] else None
+                    _th = bill_img_uri(row['id'], row['img_len'], 96)
                     _slip = (f'<div class="bill-slip" style="background-image:url({_th});"></div>'
                              if _th else '<div class="bill-slip bill-noslip">ไม่มี<br>สลิป</div>')
+                    _when = str(row_get(row, 'created_at', ''))[:10]   # [FIX v39] วันที่บันทึก
                     st.markdown(
                         '<div class="bill-row">' + _slip +
                         '<div class="bill-mid">'
-                        f'<div class="bill-desc">{esc(row["description"])}</div>'
-                        f'<div class="bill-meta">จ่ายโดย {esc(row["payer_name"])} · หาร {len(sl)} คน · '
+                        f'<div class="bill-desc">{esc(row["description"])}'
+                        f'<span class="bill-cat" style="background:{CAT_COLOR[cat_of(row)]};">'
+                        f'{CAT_ICON[cat_of(row)]} {esc(cat_of(row))}</span></div>'
+                        f'<div class="bill-meta">'
+                        + (f'{esc(_when)} · ' if _when else '')
+                        + f'จ่ายโดย {esc(row["payer_name"])} · หาร {len(sl)} คน · '
                         + (f'ส่วนคุณ {_mine:,.2f} ฿' if _mine is not None
                            else ("หารไม่เท่ากัน" if _uneq else f"คนละ {row['amount']/len(sl):,.2f} ฿"))
                         + '</div></div>'
                         f'<div class="bill-amt money">{row["amount"]:,.2f} ฿</div>'
                         '</div>', unsafe_allow_html=True)
+                    if cur_closed:
+                        continue          # [FIX v34] ทริปปิดแล้ว = ดูอย่างเดียว
                     with st.expander("แก้ไขบิลนี้"):
                         a,b2 = st.columns([1,1.5])
                         with a:
-                            if row['has_img']:
-                                st.image(row['image_blob'], use_container_width=True)
+                            _full = bill_img_bytes(row['id'], row['img_len'], 600)
+                            if _full:
+                                st.image(_full, use_container_width=True)
                             else: st.markdown('<div style="background:#dbeafe;border-radius:8px;height:90px;display:flex;align-items:center;justify-content:center;color:#374151;font-size:13px;">ไม่มีสลิป</div>',unsafe_allow_html=True)
                             st.markdown("**ส่วนของแต่ละคน**")
                             for _n, _v in _sh_map.items():
@@ -1878,21 +2222,71 @@ if menu == "home":
                         with b2:
                             with st.form(f"ed_{row['id']}"):
                                 ud = st.text_input("รายการ:", value=row['description'])
-                                ua = st.number_input("จำนวน:", value=row['amount'])
+                                # [FIX v39] เดิมไม่มี min_value → ใส่ยอดติดลบได้
+                                ua = st.number_input("จำนวน:", min_value=0.0, step=10.0,
+                                                     value=float(row['amount']))
                                 po = members if row['payer_name'] in members else members+[row['payer_name']]
                                 up = st.selectbox("คนจ่าย:", po, index=po.index(row['payer_name']))
-                                st.write("คนหาร:"); us = [m for m in po if st.checkbox(m, value=(m in row['split_members'].split(",")), key=f"ed_{row['id']}_{m}")]
+                                # [FIX v39] เดิมแก้หมวดหมู่ไม่ได้เลย ต้องลบบิลแล้วสร้างใหม่
+                                uc = st.selectbox("หมวดหมู่:",
+                                                  [f"{CAT_ICON[n]} {n}" for n in CAT_NAMES],
+                                                  index=CAT_NAMES.index(cat_of(row)))
+                                st.write("คนหาร:")
+                                us = [m for m in po if st.checkbox(m, value=(m in sl), key=f"ed_{row['id']}_{m}")]
                                 uf = st.file_uploader("สลิป:", type=['jpg','png','jpeg'])
                                 di = st.checkbox("🗑️ ลบรูป", key=f"di_{row['id']}")
+                                if row['split_detail']:
+                                    st.caption("⚠️ บิลนี้หารไม่เท่ากัน — ถ้าแก้ยอดเงินหรือ"
+                                               "รายชื่อคนหาร ระบบจะเปลี่ยนกลับเป็นหารเท่ากัน "
+                                               "แล้วต้องตั้งค่าหารใหม่")
                                 if st.form_submit_button("💾 อัปเดต", type="primary"):
-                                    c=db()
-                                    if di: c.execute("UPDATE expenses SET description=?,amount=?,payer_name=?,split_members=?,image_blob=NULL WHERE id=?",(ud,ua,up,",".join(us),row['id']))
-                                    elif uf: c.execute("UPDATE expenses SET description=?,amount=?,payer_name=?,split_members=?,image_blob=? WHERE id=?",(ud,ua,up,",".join(us),compress_image(uf),row['id']))
-                                    else: c.execute("UPDATE expenses SET description=?,amount=?,payer_name=?,split_members=? WHERE id=?",(ud,ua,up,",".join(us),row['id']))
-                                    c.commit(); c.close(); flash("อัปเดต!", "ok"); st.rerun()
-                            if st.button("🗑️ ลบบิล", key=f"db_{row['id']}", type="secondary"):
+                                    _newsplit = ",".join(us)
+                                    if not us:
+                                        # [FIX v39] บั๊กเดิม: ปล่อยผ่านได้ → split_members ว่าง
+                                        #   → ไม่มีใครถูกหัก แต่คนจ่ายยังได้เครดิตเต็ม
+                                        #   → ยอดสุทธิทั้งทริปไม่สมดุลถาวร
+                                        st.error("⚠️ ต้องเลือกคนหารอย่างน้อย 1 คน")
+                                    elif ua <= 0:
+                                        st.error("⚠️ จำนวนเงินต้องมากกว่า 0")
+                                    elif uf and uf.size > MAX_UPLOAD_MB*1024*1024:
+                                        st.error(f"⚠️ ไฟล์ใหญ่เกิน {MAX_UPLOAD_MB} MB")
+                                    else:
+                                        # [FIX v39] บั๊กเดิมข้อใหญ่: ฟอร์มนี้ไม่เคยแตะ split_detail
+                                        #   บิลที่หารแบบ "ระบุยอดเอง" 300 ฿ (A=200) ถ้าแก้เป็น 600 ฿
+                                        #   A ยังถูกคิด 200 เท่าเดิม ที่เหลือไปตกคนอื่นหมด
+                                        #   ทางที่ปลอดภัยที่สุดคือ: ถ้ายอดหรือคนหารเปลี่ยน
+                                        #   ให้ล้างวิธีหารเดิมทิ้ง กลับไปหารเท่ากัน แล้วบอกผู้ใช้
+                                        _same = (abs(float(ua) - float(row['amount'])) < 0.005
+                                                 and _newsplit == row['split_members'])
+                                        _det2 = row['split_detail'] if _same else None
+                                        _cat2 = uc.split(" ", 1)[-1]
+                                        c=db()
+                                        c.execute("UPDATE expenses SET description=?,amount=?,"
+                                                  "payer_name=?,split_members=?,split_detail=?,"
+                                                  "category=? WHERE id=?",
+                                                  (ud, ua, up, _newsplit, _det2, _cat2, row['id']))
+                                        if di:
+                                            c.execute("UPDATE expenses SET image_blob=NULL WHERE id=?",
+                                                      (row['id'],))
+                                        elif uf:
+                                            c.execute("UPDATE expenses SET image_blob=? WHERE id=?",
+                                                      (compress_image(uf), row['id']))
+                                        c.commit(); c.close()
+                                        audit(trip_id, me, "แก้ไขบิล", ud,
+                                              f"{row['amount']:,.2f} → {ua:,.2f} ฿")
+                                        flash("อัปเดตบิลแล้ว" +
+                                              ("" if _same or not row['split_detail']
+                                               else " (วิธีหารถูกรีเซ็ตเป็นหารเท่ากัน)"), "ok")
+                                        st.rerun()
+                            # [FIX v39] ลบบิลต้องยืนยันก่อน — ของเดิมกดปุ่มเดียวหายเลย
+                            #   ซึ่งอันตรายมากเพราะปุ่มอยู่ใต้ฟอร์มแก้ไขที่คนกดบ่อย
+                            _okdel = st.checkbox("ฉันต้องการลบบิลนี้", key=f"dok_{row['id']}")
+                            if st.button("🗑️ ลบบิลถาวร", key=f"db_{row['id']}",
+                                         type="secondary", disabled=not _okdel):
                                 c=db(); c.execute("DELETE FROM expenses WHERE id=?",(row['id'],)); c.commit(); c.close()
-                                flash("ลบแล้ว", "warn"); st.rerun()
+                                audit(trip_id, me, "ลบบิล", row['description'],
+                                      f"{row['amount']:,.2f} ฿")
+                                flash("ลบบิลแล้ว", "warn"); st.rerun()
 
         # ── TAB 3 ──────────────────────────────────────────────
         if _ht == 2:
@@ -1906,6 +2300,14 @@ if menu == "home":
                             "เพิ่มบิลแรกแล้วระบบจะคำนวณให้เองว่าใครต้องโอนให้ใคร",
                             "➕ ไปหน้าเพิ่มบิล", "go_sum_add", ("tab_home", 0))
             else:
+                # [FIX v39] ตรวจสุขภาพยอด — ผลรวมสุทธิของทุกคนต้องเป็นศูนย์เสมอ
+                #   ถ้าไม่ใช่ แปลว่ามีบิลที่ข้อมูลเสีย (เช่นไม่มีคนหาร) ซึ่งเดิม
+                #   จะไม่มีใครรู้เลยจนกว่าจะโอนเงินผิดกันไปแล้ว
+                _imbal = sum(net.values())
+                if abs(_imbal) > 0.05:
+                    st.error(f"⚠️ ยอดรวมของทริปไม่สมดุล ({_imbal:,.2f} ฿) "
+                             f"— มีบิลบางใบที่ไม่มีคนหาร กรุณาตรวจที่แท็บประวัติ")
+
                 st.markdown("#### 📊 ยอดสรุปรายคน")
                 nc2 = min(len(net),4); cols2 = st.columns(nc2)
                 for i,(m2,b) in enumerate(sorted(net.items(), key=lambda x:-x[1])):
@@ -1923,6 +2325,24 @@ if menu == "home":
                             f'<div style="font-size:11px;color:#6b7280;">{lbl}</div>'
                             f'<div class="money" style="font-weight:700;font-size:17px;color:{clr};">{abs(b):,.2f} ฿</div>'
                             '</div>', unsafe_allow_html=True)
+
+                # ── [FIX v34] หมดไปกับอะไรบ้าง ──────────────────
+                _bycat = {}
+                for r in exps2:
+                    _bycat[cat_of(r)] = _bycat.get(cat_of(r), 0.0) + r['amount']
+                if len(_bycat) > 1:
+                    st.markdown("#### 🏷️ หมดไปกับอะไรบ้าง")
+                    _tot_c = sum(_bycat.values())
+                    for _n, _v in sorted(_bycat.items(), key=lambda x: -x[1]):
+                        _pct = _v / _tot_c * 100 if _tot_c else 0
+                        st.markdown(
+                            f'<div class="cat-row">'
+                            f'<div class="cat-nm">{CAT_ICON[_n]} {esc(_n)}</div>'
+                            f'<div class="cat-track"><div class="cat-fill" '
+                            f'style="width:{_pct:.1f}%;background:{CAT_COLOR[_n]};"></div></div>'
+                            f'<div class="cat-amt money">{_v:,.0f} ฿</div>'
+                            f'<div class="cat-pct">{_pct:.0f}%</div>'
+                            f'</div>', unsafe_allow_html=True)
 
                 st.markdown("#### 🚀 แผนโอนเงิน")
                 pairs = settle_plan(net)   # [FIX v21] ย้ายไปเป็นฟังก์ชันร่วม
@@ -2008,6 +2428,7 @@ if menu == "home":
                                             f"✅ บันทึกการชำระเงิน\n💳 {dn} → {cn}\n💰 {at:,.2f} บาท"
                                             + ("\n📎 แนบสลิปไว้แล้ว" if _slip else ""), now_str()))
                                 cp.commit(); cp.close()
+                                audit(trip_id, me, "บันทึกการชำระ", f"{dn} → {cn}", f"{at:,.2f} ฿")
                                 flash("บันทึกการชำระแล้ว", "ok"); st.rerun()
                         # [FIX v22] ปุ่มทวงเงิน — เจ้าหนี้กดแล้วส่งเข้าแชทให้ลูกหนี้เลย
                         if me == cn:
@@ -2031,24 +2452,55 @@ if menu == "home":
                     with st.expander(f"🧾 ประวัติการชำระ ({len(paid_rows)} รายการ)"):
                         for pr in paid_rows:
                             h1,h2 = st.columns([4,1])
-                            _has_slip = pr['slip_blob'] is not None   # [FIX v22]
+                            _has_slip = bool(pr['slip_len'])   # [FIX v39] ไม่ดึง blob มาทั้งก้อน
                             h1.markdown(f"✅ **{esc(pr['debtor'])} → {esc(pr['creditor'])}** "
                                         f"· {pr['amount']:,.2f} ฿{'  📎' if _has_slip else ''}  \n"
                                         f"<span style='font-size:11px;color:#6b7280;'>{esc(pr['timestamp'])}</span>",
                                         unsafe_allow_html=True)
                             if _has_slip:
                                 with st.expander("ดูสลิป"):
-                                    st.image(pr['slip_blob'], width=260)
-                            if h2.button("ยกเลิก", key=f"unpay_{pr['id']}"):
-                                cu=db(); cu.execute("DELETE FROM settlements WHERE id=?",(pr['id'],)); cu.commit(); cu.close()
-                                flash("ยกเลิกการชำระแล้ว", "ok"); st.rerun()
+                                    _sb = slip_img_bytes(pr['id'], pr['slip_len'], 600)
+                                    if _sb: st.image(_sb, width=260)
+                            # [FIX v39] ยกเลิกได้เฉพาะคู่กรณี — ของเดิมใครก็กดยกเลิก
+                            #   การชำระของคนอื่นได้ ทั้งที่ตอนกด "ชำระแล้ว" ยังจำกัดสิทธิ์ไว้
+                            if me in (pr['debtor'], pr['creditor']):
+                                if h2.button("ยกเลิก", key=f"unpay_{pr['id']}"):
+                                    cu=db(); cu.execute("DELETE FROM settlements WHERE id=?",(pr['id'],)); cu.commit(); cu.close()
+                                    audit(trip_id, me, "ยกเลิกการชำระ",
+                                          f"{pr['debtor']} → {pr['creditor']}", f"{pr['amount']:,.2f} ฿")
+                                    flash("ยกเลิกการชำระแล้ว", "ok"); st.rerun()
+                            else:
+                                h2.caption("—")
+
+                # ── [FIX v39] ใครแก้อะไรไว้บ้าง ──────────────────
+                c = db()
+                _logs = c.execute("SELECT * FROM audit_log WHERE trip_id=? "
+                                  "ORDER BY id DESC LIMIT 40", (trip_id,)).fetchall()
+                c.close()
+                if _logs:
+                    with st.expander(f"📜 ประวัติการแก้ไข ({len(_logs)} รายการล่าสุด)"):
+                        st.caption("บันทึกไว้เพื่อให้ตรวจย้อนได้ว่ายอดเปลี่ยนเพราะใคร "
+                                   "ไม่ใช่เพื่อจับผิดกัน")
+                        for lg in _logs:
+                            st.markdown(
+                                f'<div style="display:flex;gap:9px;padding:7px 0;'
+                                f'border-bottom:1px solid #dbeafe;font-size:12.5px;">'
+                                f'<span style="color:#6b7280;white-space:nowrap;">'
+                                f'{esc(str(lg["timestamp"])[5:16])}</span>'
+                                f'<span style="color:#000;flex:1;min-width:0;">'
+                                f'<b>{esc(lg["actor"])}</b> {esc(lg["action"])} '
+                                f'<i>{esc(lg["target"])}</i>'
+                                + (f' <span style="color:#6b7280;">· {esc(lg["detail"])}</span>'
+                                   if lg["detail"] else "")
+                                + '</span></div>', unsafe_allow_html=True)
 
                 st.markdown("#### 📲 แชร์ LINE")
                 lm=f"📊 สรุปบิล: {cur_trip}\n"
                 if has_date: lm+=f"📅 {cur_date}\n"
                 lm+="========================\n"; tot=0.0
                 for i2,r2 in enumerate(exps2,1):
-                    sl2=r2['split_members'].split(",")
+                    sl2=[n for n in r2['split_members'].split(",") if n]
+                    if not sl2: continue
                     _m2=split_amounts(r2['amount'], sl2, r2['split_detail'], seed=r2['id'])
                     _uq = len(set(round(v,2) for v in _m2.values())) > 1
                     lm+=f"{i2}. {r2['description']} | {r2['amount']:,.2f} ฿ | {r2['payer_name']}\n"
@@ -2066,6 +2518,18 @@ if menu == "home":
                 lm+="========================"
                 st.text_area("ข้อความ LINE:", value=lm, height=180, disabled=True)
                 st.link_button("🟢 เปิด LINE", f"https://line.me/R/msg/text/?{urllib.parse.quote(lm)}", type="primary", use_container_width=True)
+                # [FIX v39] เอาตารางบิลออกไปทำต่อที่อื่นได้ (Excel / Google Sheets)
+                _csv = pd.DataFrame([{
+                    "วันที่": row_get(r2, "created_at", ""),
+                    "รายการ": r2["description"],
+                    "หมวด": cat_of(r2),
+                    "จำนวนเงิน": r2["amount"],
+                    "คนจ่าย": r2["payer_name"],
+                    "คนหาร": r2["split_members"],
+                } for r2 in exps2]).to_csv(index=False).encode("utf-8-sig")
+                st.download_button("📄 ดาวน์โหลดตารางบิล (.csv)", data=_csv,
+                                   file_name=f"bills_{trip_id}.csv", mime="text/csv",
+                                   use_container_width=True)
 
         # ── TAB 4: ของที่ต้องหิ้ว ──────────────────────────────
         if _ht == 3:
@@ -2108,8 +2572,17 @@ if menu == "home":
                 for r in packs:
                     k = r['id']
                     row = st.columns([0.6, 4, 2.2, 1.2])
+                    # [FIX v37] ใส่ค่า done ลงใน key ด้วย
+                    #   ปัญหาเดิม: Streamlit จำค่า checkbox ตาม key ไว้ใน session
+                    #   และค่าที่จำไว้ "ชนะ" พารามิเตอร์ value= เสมอ
+                    #   พอโค้ดอื่น (เช่นการแปลงเป็นบิล) เขียน done=1 ลงฐานข้อมูล
+                    #   checkbox ยังคืนค่าเดิม False → บรรทัดล่างมองว่าผู้ใช้ติ๊กออก
+                    #   แล้วเขียนทับกลับเป็น 0 ทันที = ติ๊กเองไม่ได้ผลเลย
+                    #   พอ key เปลี่ยนตามค่า done มันจะกลายเป็น widget ตัวใหม่
+                    #   จึงอ่านค่าจาก value= ได้ถูกต้อง
+                    _dk = f"pkdone_{k}_{int(bool(r['done']))}"
                     _new_done = row[0].checkbox("เตรียมแล้ว", value=bool(r['done']),
-                                                key=f"pkdone_{k}", label_visibility="collapsed")
+                                                key=_dk, label_visibility="collapsed")
                     if _new_done != bool(r['done']):
                         c = db(); c.execute("UPDATE packing SET done=? WHERE id=?", (int(_new_done), k)); c.commit(); c.close()
                         st.rerun()
@@ -2117,10 +2590,12 @@ if menu == "home":
                     _own = (f'<span class="pk-who" style="background:{person_color(r["assignee"])};">'
                             f'{esc(r["assignee"])}</span>' if r['assignee']
                             else '<span class="pk-who pk-none">ยังไม่มีคนรับ</span>')
+                    _paid_tag = ('<span class="pk-who" style="background:#1d4ed8;">💸 ทำเป็นบิลแล้ว</span>'
+                                 if r['expense_id'] else '')
                     row[1].markdown(
                         f'<div style="{_sty}padding-top:5px;">'
                         f'<b>{esc(r["item"])}</b>'
-                        f'{" · " + esc(r["qty"]) if r["qty"] else ""} {_own}</div>',
+                        f'{" · " + esc(r["qty"]) if r["qty"] else ""} {_own}{_paid_tag}</div>',
                         unsafe_allow_html=True)
                     _opts = ["— ยังไม่มีคนรับ —"] + members
                     _cur = r['assignee'] if r['assignee'] in members else "— ยังไม่มีคนรับ —"
@@ -2138,7 +2613,9 @@ if menu == "home":
                 st.markdown('<div class="section-head" style="margin-top:14px;">'
                             '💸 ซื้อของแล้ว → ทำเป็นบิลหารกัน</div>', unsafe_allow_html=True)
                 _buyable = [r for r in packs if not r['expense_id']]
-                if not _buyable:
+                if cur_closed:
+                    st.caption("🔒 ทริปนี้ปิดแล้ว — บันทึกบิลเพิ่มไม่ได้")
+                elif not _buyable:
                     st.caption("ทุกรายการถูกบันทึกเป็นบิลไปแล้ว")
                 else:
                     with st.form("pack_to_bill", clear_on_submit=True):
@@ -2149,6 +2626,11 @@ if menu == "home":
                         _amt = _b1.number_input("จ่ายไปเท่าไหร่ (บาท):", min_value=0.0, step=10.0)
                         _payer = _b2.selectbox("ใครเป็นคนจ่าย:", members,
                                                index=members.index(me) if me in members else 0)
+                        # [FIX v39] เดิมล็อกหมวดเป็น "อื่น ๆ" เสมอ ทั้งที่ของแคมป์
+                        #   ส่วนใหญ่เข้าหมวด "อุปกรณ์" — กราฟสรุปหมวดเลยเพี้ยน
+                        _pcat = st.selectbox("หมวดหมู่:",
+                                             [f"{CAT_ICON[n]} {n}" for n in CAT_NAMES],
+                                             index=CAT_NAMES.index("อุปกรณ์"))
                         if st.form_submit_button("💸 บันทึกเป็นบิลหารกัน", type="primary",
                                                  use_container_width=True):
                             if _amt <= 0:
@@ -2158,12 +2640,14 @@ if menu == "home":
                             else:
                                 _pid = _lbl[_sel]
                                 c = db()
-                                c.execute("INSERT INTO expenses (trip_id,description,amount,payer_name,split_members) "
-                                          "VALUES (?,?,?,?,?)",
-                                          (trip_id, _sel, _amt, _payer, ",".join(members)))
-                                _eid = c.execute("SELECT last_insert_rowid() AS i").fetchone()["i"]
+                                _cu = c.execute(
+                                    "INSERT INTO expenses (trip_id,description,amount,payer_name,"
+                                    "split_members,category,created_at) VALUES (?,?,?,?,?,?,?)",
+                                    (trip_id, _sel, _amt, _payer, ",".join(members),
+                                     _pcat.split(" ", 1)[-1], now_str()))
+                                _eid = _cu.lastrowid
                                 c.execute("UPDATE packing SET expense_id=?, done=1 WHERE id=?", (_eid, _pid))
-                                _sh = split_amounts(_amt, members)
+                                _sh = split_amounts(_amt, members, seed=_eid or 0)
                                 for _m2 in members:
                                     if _m2 != _payer:
                                         c.execute("INSERT INTO notifications (trip_id,to_user,from_user,message,is_auto,is_read,timestamp) "
@@ -2172,6 +2656,7 @@ if menu == "home":
                                                    f"🎒 ของแคมป์: '{_sel}'\n💰 {_amt:,.2f} บาท | จ่ายโดย: {_payer}\n"
                                                    f"💸 ส่วนคุณ: {_sh.get(_m2,0):,.2f} บาท", now_str()))
                                 c.commit(); c.close()
+                                audit(trip_id, me, "เพิ่มบิลจากรายการของ", _sel, f"{_amt:,.2f} ฿")
                                 flash(f"บันทึก '{_sel}' เป็นบิลแล้ว", "ok"); st.rerun()
 
         # ── TAB 5: แคมป์ (พิกัด + อากาศ + เตรียมออฟไลน์) ────────
@@ -2203,6 +2688,16 @@ if menu == "home":
                         c.commit(); c.close()
                         flash("บันทึกจุดกางเต็นท์แล้ว", "ok"); st.rerun()
 
+            # [FIX v36] ล้างจุดกางเต็นท์ — เผื่อตั้งผิดที่หรือย้ายลานกางเต็นท์
+            if _lat is not None and not cur_closed:
+                if st.button("🧹 ล้างจุดกางเต็นท์", key="clear_camp",
+                             use_container_width=True):
+                    c = db()
+                    c.execute("UPDATE trips SET place_name=NULL, lat=NULL, lon=NULL WHERE id=?",
+                              (trip_id,))
+                    c.commit(); c.close()
+                    flash("ล้างจุดกางเต็นท์แล้ว", "warn"); st.rerun()
+
             if _lat is not None:
                 _url = f"https://www.google.com/maps/search/?api=1&query={_lat},{_lon}"
                 _dir = f"https://www.google.com/maps/dir/?api=1&destination={_lat},{_lon}"
@@ -2219,8 +2714,16 @@ if menu == "home":
                                horizontal=True, key="camp_mapmode",
                                label_visibility="collapsed")
                 if _mv.startswith("🗺️"):
-                    st.map(pd.DataFrame({"lat": [_lat], "lon": [_lon]}),
-                           zoom=13, size=60, color="#dc2626")
+                    # [FIX v38] เหลือแค่หมุดจุดกางเต็นท์ (ถอดตำแหน่งของฉันออกแล้ว)
+                    _pt = pd.DataFrame([{"lat": _lat, "lon": _lon, "c": "#dc2626", "s": 70}])
+                    # [FIX v32] กำหนดความสูงชัดเจน — ค่าเริ่มต้นของ st.map คือ 500px
+                    #   พารามิเตอร์ height เพิ่งมีใน Streamlit รุ่นใหม่ ๆ จึงเผื่อทางถอยไว้
+                    try:
+                        st.map(_pt, latitude="lat", longitude="lon", color="c", size="s",
+                               zoom=13, height=300)
+                    except TypeError:
+                        st.map(_pt, latitude="lat", longitude="lon", color="c", size="s", zoom=13)
+                    st.caption("🔴 จุดกางเต็นท์")
                 else:
                     # Google Maps แบบฝัง: ใช้ได้โดยไม่ต้องมี API key
                     #   แต่ Google อาจบล็อกการฝังในบาง network/เบราว์เซอร์
@@ -2229,7 +2732,7 @@ if menu == "home":
                     #   ตัวหลังถูกประกาศเลิกใช้ตั้งแต่ 1 มิ.ย. 2026 (เลยกำหนดมาแล้ว)
                     st.html(
                         f'<iframe src="https://maps.google.com/maps?q={_lat},{_lon}'
-                        f'&z=15&output=embed" width="100%" height="340" '
+                        f'&z=15&output=embed" width="100%" height="300" '
                         f'style="border:1.5px solid #bfdbfe;border-radius:12px;" '
                         f'loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>')
                     st.caption("ถ้าช่องแผนที่ว่างเปล่า แปลว่าเบราว์เซอร์บล็อกการฝังของ Google "
@@ -2288,17 +2791,33 @@ if menu == "home":
                 st.warning("หาฟอนต์ภาษาไทยไม่ได้เลย (ทั้งในเครื่องและดาวน์โหลด) "
                            "ตัวอักษรในรูปจะเป็นสี่เหลี่ยม — เพิ่มไฟล์ `packages.txt` "
                            "ที่มีบรรทัด `fonts-thai-tlwg` แล้ว reboot app")
-            _png = offline_sheet(trip_id, cur_trip, cur_date, members, me)
-            st.download_button("⬇️ โหลดสรุปทริปเป็นรูป (ใช้ได้ตอนออฟไลน์)",
-                               data=_png, file_name=f"trip_{trip_id}_offline.png",
-                               mime="image/png", type="primary", use_container_width=True)
+            # [FIX v39] แยกเป็นสองจังหวะ: กด "สร้าง" ก่อน แล้วค่อยโหลด
+            #   ของเดิมเรียก offline_sheet() ตรง ๆ ตอนสร้าง download_button
+            #   ซึ่ง Streamlit ต้องมีข้อมูลพร้อมเสมอ → วาดรูปใหม่ทุก 3 วินาที
+            #   ที่ค้างอยู่แท็บนี้ (วาดผืน 820×2400 + สร้าง QR ทุกรอบ)
+            #   เก็บผลไว้ใน session_state พร้อมเวลาที่สร้าง จะได้รู้ว่าข้อมูลสดแค่ไหน
+            _ok_key = f"offsheet_{trip_id}"
+            if st.button("🖼️ สร้างสรุปทริปเป็นรูป", key="mk_offsheet",
+                         type="primary", use_container_width=True):
+                with st.spinner("กำลังวาดสรุป..."):
+                    st.session_state[_ok_key] = (offline_sheet(trip_id, cur_trip, cur_date,
+                                                               members, me), now_str())
+                st.rerun()
+            _sheet = st.session_state.get(_ok_key)
+            if _sheet:
+                st.download_button("⬇️ โหลดสรุปทริปเป็นรูป (ใช้ได้ตอนออฟไลน์)",
+                                   data=_sheet[0], file_name=f"trip_{trip_id}_offline.png",
+                                   mime="image/png", use_container_width=True)
+                st.caption(f"สรุปนี้สร้างเมื่อ {esc(_sheet[1])} — "
+                           "ถ้ามีบิลเพิ่มหลังจากนั้น ให้กดสร้างใหม่อีกครั้ง")
 
 # ═══════════════════════════════════════════════════════
 # PAGE: จัดการ (Events + Members รวมกัน)
 # ═══════════════════════════════════════════════════════
 elif menu == "manage":
     # [FIX v19] ใช้ tab_bar แทน st.tabs ด้วยเหตุผลเดียวกับหน้าหลัก
-    _mt = tab_bar("tab_manage", ["🗓️ Events", "👥 สมาชิก", "🗑️ ถังขยะ", "💾 สำรองข้อมูล"])
+    _mt = tab_bar("tab_manage", ["🗓️ Events", "👥 สมาชิก", "🧮 ยอดรวมทุกทริป",
+                                 "🗑️ ถังขยะ", "💾 สำรองข้อมูล"])
 
     # ── TAB: Events ────────────────────────────────────
     if _mt == 0:
@@ -2308,12 +2827,45 @@ elif menu == "manage":
             with st.form("create_ev"):
                 ne = st.text_input("ชื่อ Event:", placeholder="เช่น ทริปเชียงใหม่")
                 nd = st.date_input("วันที่:", value=datetime.today())
+                # [FIX v34] คัดลอกจากทริปเดิม — กลุ่มที่เที่ยวด้วยกันประจำ
+                #   ไม่ต้องมานั่งเพิ่มสมาชิกและรายการของใหม่ทุกครั้ง
+                _srcs = {"— เริ่มจากศูนย์ —": None}
+                if not trips_df.empty:
+                    for _, _r in trips_df.iterrows():
+                        _srcs[f"{_r['name']}"] = int(_r["id"])
+                _from = st.selectbox("คัดลอกจากทริปเดิม:", list(_srcs.keys()))
+                _cp1, _cp2 = st.columns(2)
+                _cp_mem  = _cp1.checkbox("คัดลอกสมาชิก", value=True)
+                _cp_pack = _cp2.checkbox("คัดลอกของที่ต้องหิ้ว", value=True)
                 if st.form_submit_button("✅ สร้าง", type="primary", use_container_width=True):
                     ok_n, err_n = valid_name(ne)
                     if ok_n:
                         try:
-                            c=db(); c.execute("INSERT INTO trips (name,status,trip_date,created_by) VALUES (?,0,?,?)",(ne.strip(),nd.strftime("%Y-%m-%d"),me)); c.commit(); c.close()
-                            flash(f"สร้าง '{ne.strip()}' แล้ว!", "ok"); st.rerun()
+                            c=db()
+                            _cu = c.execute("INSERT INTO trips (name,status,trip_date,created_by) VALUES (?,0,?,?)",
+                                            (ne.strip(), nd.strftime("%Y-%m-%d"), me))
+                            _new_id = _cu.lastrowid
+                            _sid = _srcs.get(_from)
+                            _n_m = _n_p = 0
+                            if _sid:
+                                if _cp_mem:
+                                    for _r2 in c.execute("SELECT name FROM members WHERE trip_id=?", (_sid,)).fetchall():
+                                        c.execute("INSERT OR IGNORE INTO members (trip_id,name) VALUES (?,?)",
+                                                  (_new_id, _r2["name"])); _n_m += 1
+                                if _cp_pack:
+                                    # คัดลอกเฉพาะ "รายการของ" ไม่เอาสถานะเตรียมแล้ว
+                                    # และไม่เอาบิลที่ผูกไว้ เพราะเป็นของทริปเก่า
+                                    for _r3 in c.execute("SELECT item,qty,assignee FROM packing WHERE trip_id=?", (_sid,)).fetchall():
+                                        c.execute("INSERT INTO packing (trip_id,item,qty,assignee,done,added_by,timestamp) "
+                                                  "VALUES (?,?,?,?,0,?,?)",
+                                                  (_new_id, _r3["item"], _r3["qty"], _r3["assignee"], me, now_str()))
+                                        _n_p += 1
+                            c.commit(); c.close()
+                            st.session_state["trip_id"] = _new_id
+                            audit(_new_id, me, "สร้าง Event", ne.strip())
+                            _msg = f"สร้าง '{ne.strip()}' แล้ว!"
+                            if _sid: _msg += f" (คัดลอกสมาชิก {_n_m} คน · ของ {_n_p} รายการ)"
+                            flash(_msg, "ok"); st.rerun()
                         except sqlite3.IntegrityError: st.error("❌ ชื่อซ้ำ")
                     else: st.error(f"⚠️ {err_n}")
 
@@ -2337,9 +2889,28 @@ elif menu == "manage":
                 #   แต่ในเครื่องจริง Event ทั้งหมดที่มีอยู่ก่อนคือค่าว่าง
                 #   กฎเลยไม่มีผลอะไรเลย ตอนนี้ Event ไร้เจ้าของจะลบไม่ได้
                 #   จนกว่าจะมีคนกดรับเป็นเจ้าของก่อน (บันทึกไว้ว่าใครรับ)
+                # [FIX v34] ปิด/เปิดทริป — ล็อกไม่ให้แก้บิลหลังเคลียร์เงินจบแล้ว
+                _cn1, _cn2 = st.columns(2)
+                if cur_closed:
+                    if _cn1.button("🔓 เปิดทริปอีกครั้ง", use_container_width=True):
+                        c=db(); c.execute("UPDATE trips SET status=0, closed_at=NULL WHERE id=?",(trip_id,)); c.commit(); c.close()
+                        audit(trip_id, me, "เปิดทริปอีกครั้ง", cur_trip)
+                        flash("เปิดทริปแล้ว แก้ไขได้ตามปกติ", "ok"); st.rerun()
+                    _cn2.caption(f"🔒 ปิดเมื่อ {esc(cur_closed_at or '-')}")
+                else:
+                    _net_chk, _, _ = compute_net(trip_id, members)
+                    _left = sum(1 for v in _net_chk.values() if abs(v) > 0.01)
+                    if _cn1.button("🔒 ปิดทริปนี้", use_container_width=True):
+                        c=db(); c.execute("UPDATE trips SET status=2, closed_at=? WHERE id=?",(now_str(), trip_id)); c.commit(); c.close()
+                        audit(trip_id, me, "ปิดทริป", cur_trip)
+                        flash("ปิดทริปแล้ว — ดูย้อนหลังได้อย่างเดียว", "ok"); st.rerun()
+                    _cn2.caption("ยอดเคลียร์ครบแล้ว" if _left == 0
+                                 else f"⚠️ ยังมี {_left} คนที่ยอดไม่เป็นศูนย์")
+
                 if cur_owner == me:
                     if st.button("🗑️ ลบ Event นี้", type="secondary", use_container_width=True):
                         c=db(); c.execute("UPDATE trips SET status=1 WHERE id=?",(trip_id,)); c.commit(); c.close()
+                        audit(trip_id, me, "ย้าย Event ไปถังขยะ", cur_trip)
                         st.session_state["trip_id"]=None; flash("ย้ายสู่ถังขยะ", "ok"); st.rerun()
                 elif cur_owner:
                     st.button("🗑️ ลบ Event นี้", type="secondary",
@@ -2357,6 +2928,7 @@ elif menu == "manage":
                         c.execute("UPDATE trips SET created_by=? WHERE id=? AND "
                                   "(created_by IS NULL OR created_by='')", (me, trip_id))
                         c.commit(); c.close()
+                        audit(trip_id, me, "รับเป็นเจ้าของ Event", cur_trip)
                         flash(f"{me} เป็นเจ้าของ Event นี้แล้ว", "ok"); st.rerun()
 
         with right:
@@ -2368,7 +2940,8 @@ elif menu == "manage":
 
                     # กำหนด Label และ Type ตามสถานะการเลือก
                     chk = "✅ " if sel else ""
-                    btn_label = f"{chk}✈️ {row['disp']}"
+                    _lock = "🔒 " if int(row_get(row, "status", 0) or 0) == TRIP_CLOSED else ""
+                    btn_label = f"{chk}{_lock}✈️ {row['disp']}"
                     btn_type = "primary" if sel else "secondary"
 
                     # เมื่อกดปุ่มชื่อ Event
@@ -2391,9 +2964,20 @@ elif menu == "manage":
                 st.markdown(f'<div class="section-head">👥 สมาชิก ({len(members)} คน)</div>', unsafe_allow_html=True)
                 if members:
                     c=db()
+                    # [FIX v39] นับแจ้งเตือนครั้งเดียวด้วย GROUP BY
+                    #   ของเดิมยิง query แยกทีละคน = 8 คนก็ 8 queries ทุก 3 วินาที
+                    _ncnt = {r["to_user"]: r["n"] for r in c.execute(
+                        "SELECT to_user, COUNT(*) AS n FROM notifications "
+                        "WHERE trip_id=? AND is_read=0 GROUP BY to_user", (trip_id,)).fetchall()}
+                    # [FIX v39] ดูก่อนว่าใครมีบิลผูกอยู่บ้าง จะได้เตือนก่อนถอดออก
+                    _involved = set()
+                    for _r in c.execute("SELECT payer_name, split_members FROM expenses "
+                                        "WHERE trip_id=?", (trip_id,)).fetchall():
+                        _involved.add(_r["payer_name"])
+                        _involved.update(n for n in (_r["split_members"] or "").split(",") if n)
+                    c.close()
                     for mem in members:
-                        nr=c.execute("SELECT COUNT(*) as n FROM notifications WHERE trip_id=? AND to_user=? AND is_read=0",(trip_id,mem)).fetchone()
-                        nc3=nr["n"] if nr else 0
+                        nc3=_ncnt.get(mem, 0)
                         ion=mem in online_users
                         dot="🟢" if ion else "⚪"
                         bdg=f'<span class="fb-badge">{nc3}</span>' if nc3>0 else ""
@@ -2403,18 +2987,29 @@ elif menu == "manage":
                             '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #dbeafe;">'
                             + avatar_html(mem, avatars.get(mem), size=34, font=13)   # [FIX v6] รูปโปรไฟล์
                             + f'<div><div style="font-weight:600;font-size:14px;color:#000;">{dot} {esc(mem)}{you}{bdg}</div>'
-                            + f'<div style="font-size:12px;color:#374151;">{"ออนไลน์" if ion else "ออฟไลน์"}</div></div></div>',
+                            + f'<div style="font-size:12px;color:#374151;">{"ออนไลน์" if ion else "ออฟไลน์"}'
+                            + (' · มีบิลผูกอยู่' if mem in _involved else '')
+                            + '</div></div></div>',
                             unsafe_allow_html=True)
-                        if mc2.button("ออก", key=f"rm_{mem}"):
+                        # [FIX v39] ถอดคนที่ยังมีบิลผูกอยู่ไม่ได้ — ของเดิมถอดได้เลย
+                        #   แล้วยอดของคนนั้นยังอยู่ในสรุปแต่หายจากรายชื่อ = งงกันทั้งกลุ่ม
+                        if mem in _involved:
+                            mc2.button("ออก", key=f"rm_{trip_id}_{mem}", disabled=True,
+                                       help="ถอดไม่ได้เพราะมีบิลผูกอยู่ ต้องลบหรือแก้บิลก่อน")
+                        elif cur_closed:
+                            mc2.button("ออก", key=f"rm_{trip_id}_{mem}", disabled=True,
+                                       help="ทริปนี้ปิดแล้ว")
+                        elif mc2.button("ออก", key=f"rm_{trip_id}_{mem}"):
                             # [FIX v25] ต้องปิด connection ก่อน st.rerun()
                             #   st.rerun() โยน exception เพื่อหยุดสคริปต์ทันที
                             #   c.close() ที่อยู่ท้ายลูปจึงไม่เคยถูกเรียก
                             #   → connection ค้างพร้อมล็อกเขียน แล้วทุกคนเจอ
                             #   sqlite3.OperationalError: database is locked
-                            c.execute("DELETE FROM members WHERE trip_id=? AND name=?",(trip_id,mem))
-                            c.commit(); c.close()
+                            c2=db()
+                            c2.execute("DELETE FROM members WHERE trip_id=? AND name=?",(trip_id,mem))
+                            c2.commit(); c2.close()
+                            audit(trip_id, me, "ถอดสมาชิกออก", mem)
                             flash(f"ถอด {mem}", "ok"); st.rerun()
-                    c.close()
                 else:
                     empty_state("👥", "ยังไม่มีใครใน Event นี้",
                                 "เลือกเพื่อนจากช่องทางขวาแล้วกดเพิ่มเข้า Event")
@@ -2469,12 +3064,14 @@ elif menu == "manage":
                         for su in sel:   # [FIX v11] OR IGNORE — ตอนนี้มี UNIQUE(trip_id,name) แล้ว
                             c.execute("INSERT OR IGNORE INTO members (trip_id, name) VALUES (?, ?)", (trip_id, su))
                         c.commit(); c.close()
+                        audit(trip_id, me, "เพิ่มสมาชิก", ", ".join(sel))
                         st.session_state["chk_select_all_mems"] = False
                         st.session_state["ms_add_mems"] = []
                         st.session_state["add_mem_msg"] = ("ok", f"เพิ่ม {len(sel)} คนเข้า Event เรียบร้อย!")
 
                     st.button("➕ เพิ่มเข้า Event", type="primary",
-                              use_container_width=True, on_click=add_selected_members)
+                              use_container_width=True, on_click=add_selected_members,
+                              disabled=cur_closed)
 
                     # callback สั่ง rerun ให้เองอยู่แล้ว จึงมาอ่านผลลัพธ์ตรงนี้
                     _res = st.session_state.pop("add_mem_msg", None)
@@ -2490,8 +3087,94 @@ elif menu == "manage":
                 if not online_users:
                     st.caption("ไม่มีใครออนไลน์")
 
-    # ── TAB: ถังขยะ ──────────────────────────────────────
+    # ── [FIX v34] TAB: ยอดรวมทุกทริป ─────────────────────
+    #   แต่ละทริปเดิมแยกขาดจากกัน แต่กลุ่มที่เที่ยวด้วยกันบ่อยจะมีหนี้ค้าง
+    #   กระจายหลายทริป — ทริปหนึ่งเขาติดเรา อีกทริปเราติดเขา
+    #   หักกลบรวมแล้วอาจโอนแค่ครั้งเดียวจบ
     if _mt == 2:
+        c = db()
+        _all_trips = c.execute("SELECT id,name,status,trip_date FROM trips "
+                               "WHERE status IN (0,2) ORDER BY id").fetchall()
+        # [FIX v39] ดึงสมาชิกของทุกทริปในครั้งเดียว — ของเดิมเปิด/ปิด connection
+        #   ใหม่ทีละทริปในลูป ทริป 12 อัน = 12 รอบเชื่อมต่อ ทุก 3 วินาที
+        _mem_by_trip = {}
+        for _r in c.execute("SELECT trip_id, name FROM members").fetchall():
+            _mem_by_trip.setdefault(_r["trip_id"], []).append(_r["name"])
+        c.close()
+        _only_open = st.checkbox("นับเฉพาะทริปที่ยังไม่ปิด", value=True,
+                                 key="cross_open_only")
+        _use = [t for t in _all_trips if not (_only_open and t["status"] == TRIP_CLOSED)]
+
+        if not _use:
+            empty_state("🧮", "ยังไม่มีทริปให้รวม",
+                        "สร้าง Event แล้วบันทึกบิลก่อน ระบบจะรวมยอดข้ามทริปให้เอง")
+        else:
+            _total = {}
+            _per_trip = []
+            for _t in _use:
+                _n, _e, _p = compute_net(_t["id"], _mem_by_trip.get(_t["id"], []))
+                if not _e and not _p:
+                    continue
+                _per_trip.append((_t, _n))
+                for _k, _v in _n.items():
+                    _total[_k] = _total.get(_k, 0.0) + _v
+
+            if not _total:
+                empty_state("🧮", "ยังไม่มีบิลในทริปไหนเลย",
+                            "พอเริ่มบันทึกบิล ยอดรวมข้ามทริปจะมาแสดงตรงนี้")
+            else:
+                _mine = _total.get(me, 0.0)
+                _lbl = ("คุณต้องจ่ายรวมทุกทริป" if _mine < -0.01 else
+                        "คุณจะได้คืนรวมทุกทริป" if _mine > 0.01 else "เคลียร์หมดทุกทริป")
+                _col = "#dc2626" if _mine < -0.01 else ("#16a34a" if _mine > 0.01 else "#1d4ed8")
+                st.markdown(
+                    f'<div class="hero"><div class="hero-lbl">{_lbl}</div>'
+                    f'<div class="hero-amt money" style="color:{_col};">{abs(_mine):,.2f}'
+                    f'<span class="hero-baht">฿</span></div>'
+                    f'<div class="hero-sub">รวมจาก {len(_per_trip)} ทริป · '
+                    f'{"เฉพาะทริปที่ยังไม่ปิด" if _only_open else "ทุกทริปรวมที่ปิดแล้ว"}</div></div>',
+                    unsafe_allow_html=True)
+
+                st.markdown('<div class="section-head">🚀 หักกลบแล้วโอนแค่นี้พอ</div>',
+                            unsafe_allow_html=True)
+                _plan = settle_plan(_total)
+                if not _plan:
+                    st.markdown('<div class="flow-clear">🎉<div class="flow-clear-t">'
+                                'เคลียร์ครบทุกคนทุกทริป</div><div class="flow-clear-s">'
+                                'ไม่มีใครต้องโอนให้ใครอีก</div></div>', unsafe_allow_html=True)
+                for _d, _cr, _a in _plan:
+                    _is_me = me in (_d, _cr)
+                    st.markdown(
+                        f'<div class="flow{" flow-me" if _is_me else ""}">'
+                        '<div class="flow-side">'
+                        + avatar_html(_d, avatars.get(_d), size=40, font=15)
+                        + f'<div class="flow-nm">{esc(_d)}</div></div>'
+                        f'<div class="flow-mid"><div class="flow-amt money">{_a:,.2f} ฿</div>'
+                        '<div class="flow-line"><span class="flow-dot"></span></div>'
+                        '<div class="flow-cap">โอนให้</div></div>'
+                        '<div class="flow-side">'
+                        + avatar_html(_cr, avatars.get(_cr), size=40, font=15)
+                        + f'<div class="flow-nm">{esc(_cr)}</div></div></div>',
+                        unsafe_allow_html=True)
+                st.caption("ยอดนี้รวมทุกทริปแล้ว — การกด “ชำระแล้ว” ยังต้องทำในแต่ละทริป "
+                           "เพื่อให้ประวัติของทริปนั้นถูกต้อง")
+
+                with st.expander(f"ดูแยกรายทริป ({len(_per_trip)} ทริป)"):
+                    for _t, _n in _per_trip:
+                        _v = _n.get(me, 0.0)
+                        _tag = ("🔒 " if _t["status"] == TRIP_CLOSED else "")
+                        _txt = (f"ต้องจ่าย {abs(_v):,.2f} ฿" if _v < -0.01 else
+                                f"ได้คืน {_v:,.2f} ฿" if _v > 0.01 else "เคลียร์แล้ว")
+                        _c = "#dc2626" if _v < -0.01 else ("#16a34a" if _v > 0.01 else "#6b7280")
+                        st.markdown(
+                            f'<div style="display:flex;justify-content:space-between;'
+                            f'padding:8px 0;border-bottom:1px solid #dbeafe;">'
+                            f'<span style="font-size:13px;color:#000;">{_tag}{esc(_t["name"])}</span>'
+                            f'<span class="money" style="font-size:13px;font-weight:700;color:{_c};">{_txt}</span>'
+                            f'</div>', unsafe_allow_html=True)
+
+    # ── TAB: ถังขยะ ──────────────────────────────────────
+    if _mt == 3:
         c=db(); dels=c.execute("SELECT * FROM trips WHERE status=1").fetchall(); c.close()
         if not dels:
             empty_state("🗑️", "ถังขยะว่างเปล่า",
@@ -2501,8 +3184,7 @@ elif menu == "manage":
                 hd=dt['trip_date'] and str(dt['trip_date']).strip()
                 dn2=f"{dt['name']} ({dt['trip_date']})" if hd else dt['name']
                 # [FIX v24] ลบถาวรก็ต้องเป็นผู้สร้างเท่านั้น (กู้คืนใครก็ทำได้)
-                try: _own = dt['created_by']
-                except (KeyError, IndexError): _own = None
+                _own = row_get(dt, 'created_by')
                 _mine = (_own == me)   # [FIX v26] ไร้เจ้าของ = ลบถาวรไม่ได้
                 dc1,dc2,dc3=st.columns([3,1,1])
                 dc1.markdown(f"✈️ **{esc(dn2)}**" +
@@ -2514,16 +3196,23 @@ elif menu == "manage":
                 if dc2.button("กู้คืน",key=f"rs_{dt['id']}",type="primary"):
                     c=db(); c.execute("UPDATE trips SET status=0 WHERE id=?",(dt['id'],)); c.commit(); c.close()
                     flash("กู้คืนแล้ว!", "ok"); st.rerun()
-                if dc3.button("ลบถาวร",key=f"pd_{dt['id']}",type="secondary",disabled=not _mine):
+                # [FIX v39] ต้องติ๊กยืนยันก่อน เพราะขั้นนี้กู้กลับไม่ได้แล้วจริง ๆ
+                _pdok = st.checkbox("ยืนยันลบถาวร", key=f"pdok_{dt['id']}",
+                                    disabled=not _mine)
+                if dc3.button("ลบถาวร",key=f"pd_{dt['id']}",type="secondary",
+                              disabled=not (_mine and _pdok)):
                     c=db()
-                    for tb in ["settlements","expenses","members","notifications"]: c.execute(f"DELETE FROM {tb} WHERE trip_id=?",(dt['id'],))
+                    # [FIX v39] ของเดิมลืมตาราง packing และ audit_log
+                    #   → ข้อมูลกำพร้าค้างในฐานข้อมูลตลอดไป และถ้ามี trip_id ใหม่
+                    #   มาชนเลขเดิม รายการของทริปเก่าจะโผล่มาในทริปใหม่
+                    for tb in ["settlements","expenses","members","notifications",
+                               "packing","audit_log"]:
+                        c.execute(f"DELETE FROM {tb} WHERE trip_id=?",(dt['id'],))
                     c.execute("DELETE FROM trips WHERE id=?",(dt['id'],)); c.commit(); c.close()
                     flash("ลบถาวร!", "ok"); st.rerun()
 
     # ── [FIX v11] TAB: สำรองข้อมูล ───────────────────────
-    if _mt == 3:
-        # [FIX v24] ไม่ถาม PIN ซ้ำที่นี่แล้ว — ผ่านประตูล็อกอินกลางมาตั้งแต่ต้นหน้า
-        #   (PIN ใช้เฉพาะตอนล็อกอินตามที่ผู้ใช้ขอ)
+    if _mt == 4:
         st.warning(
             "⚠️ **ข้อมูลไม่ถาวร** — Streamlit Community Cloud ล้างไฟล์ในเครื่องทุกครั้ง "
             "ที่ app reboot หรือ deploy โค้ดใหม่ บิล/แชท/ยอดหนี้จะหายทั้งหมด "
@@ -2533,29 +3222,59 @@ elif menu == "manage":
         with bl:
             st.markdown('<div class="section-head">⬇️ ดาวน์โหลดข้อมูล</div>', unsafe_allow_html=True)
             c=db()
-            _cnt = {t: c.execute(f"SELECT COUNT(*) n FROM {t}").fetchone()["n"] for t in BACKUP_TABLES}
+            _cnt = {}
+            for t in BACKUP_TABLES:
+                try:
+                    _cnt[t] = c.execute(f"SELECT COUNT(*) n FROM {t}").fetchone()["n"]
+                except sqlite3.OperationalError:
+                    _cnt[t] = 0
             c.close()
             st.caption(" · ".join(f"{k}: {v}" for k, v in _cnt.items()))
-            st.download_button(
-                "💾 ดาวน์โหลดไฟล์สำรอง (.json)",
-                data=export_backup(),
-                file_name=f"trip_backup_{datetime.now(TZ).strftime('%Y%m%d_%H%M')}.json",
-                mime="application/json", type="primary", use_container_width=True)
+            # [FIX v39] สร้างไฟล์เมื่อกดเท่านั้น — ของเดิมเรียก export_backup()
+            #   ตรง ๆ ตอนสร้าง download_button ซึ่งหมายความว่าทุก 3 วินาทีที่
+            #   ค้างอยู่แท็บนี้ ระบบจะอ่านทุกตารางรวมรูปสลิปทั้งหมด แล้วเข้ารหัส
+            #   base64 ใหม่หมด (ทริปที่มีรูป 50 ใบ = สิบ ๆ MB ต่อรอบ)
+            if st.button("📦 เตรียมไฟล์สำรอง", type="primary", use_container_width=True):
+                with st.spinner("กำลังรวบรวมข้อมูล..."):
+                    st.session_state["backup_blob"] = (export_backup(), now_str())
+                st.rerun()
+            _bk = st.session_state.get("backup_blob")
+            if _bk:
+                st.download_button(
+                    "💾 ดาวน์โหลดไฟล์สำรอง (.json)",
+                    data=_bk[0],
+                    file_name=f"trip_backup_{datetime.now(TZ).strftime('%Y%m%d_%H%M')}.json",
+                    mime="application/json", use_container_width=True)
+                st.caption(f"เตรียมไว้เมื่อ {esc(_bk[1])} · ขนาด {len(_bk[0])/1024:,.0f} KB")
 
         with br:
             st.markdown('<div class="section-head">⬆️ กู้คืนข้อมูล</div>', unsafe_allow_html=True)
+            # [FIX v39] ต้องยืนยัน PIN ก่อนกู้คืน
+            #   ของเดิมแค่ล็อกอินก็กดได้ ใครหยิบมือถือเพื่อนที่เปิดแอปค้างไว้
+            #   ก็ล้างข้อมูลของทั้งกลุ่มได้ในสองคลิก และไม่มีทางกู้กลับ
+            c=db(); _mypin=c.execute("SELECT pin_hash,pin_salt FROM all_users WHERE name=?",(me,)).fetchone(); c.close()
+            _has_pin = bool(_mypin and _mypin["pin_hash"])
             up = st.file_uploader("เลือกไฟล์สำรอง (.json)", type=["json"], key="restore_file")
             mode = st.radio("วิธีกู้คืน:",
                             ["ล้างของเดิมแล้วเขียนทับ", "รวมกับของเดิม"],
                             key="restore_mode")
+            _rp = st.text_input("🔑 ยืนยันด้วย PIN ของคุณ:", type="password", max_chars=4,
+                                key="restore_pin", disabled=not _has_pin)
+            if not _has_pin:
+                st.caption("บัญชีนี้ยังไม่ได้ตั้ง PIN — ตั้งที่หน้าโปรไฟล์ก่อนจึงจะกู้คืนได้")
             confirm = st.checkbox("ฉันเข้าใจว่าการกู้คืนจะเขียนทับข้อมูลปัจจุบัน", key="restore_ok")
             if st.button("♻️ กู้คืนข้อมูล", type="secondary",
-                         use_container_width=True, disabled=not (up and confirm)):
-                ok, msg = import_backup(up.getvalue(), wipe=(mode == "ล้างของเดิมแล้วเขียนทับ"))
-                if ok:
-                    flash(f"{msg}", "ok"); st.rerun()
+                         use_container_width=True,
+                         disabled=not (up and confirm and _has_pin)):
+                if not check_pin(_rp, _mypin["pin_hash"], _mypin["pin_salt"]):
+                    st.error("❌ PIN ไม่ถูกต้อง")
                 else:
-                    st.error(f"❌ {msg}")
+                    ok, msg = import_backup(up.getvalue(), wipe=(mode == "ล้างของเดิมแล้วเขียนทับ"))
+                    if ok:
+                        audit(None, me, "กู้คืนข้อมูลจากไฟล์สำรอง", mode)
+                        flash(f"{msg}", "ok"); st.rerun()
+                    else:
+                        st.error(f"❌ {msg}")
 
 
 # ═══════════════════════════════════════════════════════
@@ -2634,7 +3353,6 @@ elif menu == "chat":
                     <div style="font-weight:700;font-size:14px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{esc(pt)}</div>
                     <div style="font-size:11px;color:{'#bbf7d0' if ion2 else '#bfdbfe'};">{'🟢 ออนไลน์' if ion2 else '⚪ ออฟไลน์'}</div>
                   </div>
-                  <div style="font-size:17px;display:flex;gap:10px;">📞 📹</div>
                 </div>""", unsafe_allow_html=True)
 
                 bhtml='<div class="fb-chat-body">'
@@ -2668,7 +3386,11 @@ elif menu == "chat":
                         for n3 in msgs:
                             sh3=n3['message'][:40]+"..." if len(n3['message'])>40 else n3['message']
                             x1,x2=st.columns([4,1]); x1.caption(f"[{n3['from_user']}] {sh3}")
-                            if x2.button("ลบ",key=f"dn_{n3['id']}"):
+                            # [FIX v39] ลบได้เฉพาะข้อความของตัวเองหรือข้อความระบบที่ส่งถึงเรา
+                            #   ของเดิมลบข้อความที่เพื่อนส่งมาได้ด้วย ซึ่งเท่ากับลบหลักฐาน
+                            #   การทวงเงินของอีกฝ่ายทิ้ง
+                            _canx = (n3['from_user'] == me or n3['is_auto'] == 1)
+                            if x2.button("ลบ",key=f"dn_{n3['id']}", disabled=not _canx):
                                 c=db(); c.execute("DELETE FROM notifications WHERE id=?",(n3['id'],)); c.commit(); c.close(); st.rerun()
 
 # ═══════════════════════════════════════════════════════
@@ -2679,34 +3401,56 @@ elif menu == "account":
     with al:
         if me is None:
             # [FIX v24] เอา PIN กลับมา — ใช้เฉพาะตอนล็อกอินและตอนสมัครเท่านั้น
-            #   ไม่มีการถาม PIN ซ้ำที่หน้าอื่นอีก (สำรองข้อมูลก็ไม่ถาม)
+            #   ไม่มีการถาม PIN ซ้ำที่หน้าอื่นอีก (ยกเว้นการกู้คืนข้อมูล ซึ่งย้อนกลับไม่ได้)
             st.markdown('<div class="section-head">🔐 เข้าสู่ระบบ</div>', unsafe_allow_html=True)
             lm2=st.radio("วิธีเข้าใช้งาน",["เลือกโปรไฟล์","สร้างบัญชีใหม่"],horizontal=True,
                          label_visibility="collapsed")
             if lm2=="เลือกโปรไฟล์":
                 if all_users:
-                    with st.form("login_form"):
-                        us2 = st.selectbox("ชื่อของคุณ:", all_users)
-                        pin_in = st.text_input("🔑 PIN:", type="password", max_chars=4,
-                                               placeholder="ตัวเลข 4 หลัก")
-                        if st.form_submit_button("เข้าสู่ระบบ", type="primary", use_container_width=True):
-                            c=db(); _r=c.execute("SELECT pin_hash,pin_salt FROM all_users WHERE name=?",(us2,)).fetchone(); c.close()
-                            if _r is None:
-                                st.error("❌ ไม่พบบัญชีนี้")
-                            elif not _r["pin_hash"]:
-                                # บัญชีที่สร้างไว้ตอนยังไม่มีระบบ PIN → ตั้ง PIN ครั้งแรกตรงนี้
-                                if not (pin_in.isdigit() and len(pin_in) == 4):
-                                    st.error("บัญชีนี้ยังไม่มี PIN — ตั้งใหม่ได้เลย (ตัวเลข 4 หลัก)")
+                    # [FIX v39] เบรกการเดา PIN — PIN 4 หลักมีแค่ 10,000 แบบ
+                    #   ถ้าไม่มีเบรก คนที่นั่งอยู่ข้าง ๆ ลองเดาไปเรื่อย ๆ ก็เข้าได้
+                    #   หมายเหตุ: นับใน session_state จึงกันได้ระดับเบราว์เซอร์เดียว
+                    #   ถ้าต้องการกันจริงจังต้องเก็บสถิติความล้มเหลวลงฐานข้อมูล
+                    _lock_until = st.session_state.get("_pin_lock_until", 0)
+                    _remain = int(_lock_until - time.time())
+                    if _remain > 0:
+                        st.error(f"🔒 ใส่ PIN ผิดหลายครั้งเกินไป "
+                                 f"กรุณารออีก {_remain//60} นาที {_remain%60} วินาที")
+                    else:
+                        with st.form("login_form"):
+                            us2 = st.selectbox("ชื่อของคุณ:", all_users)
+                            pin_in = st.text_input("🔑 PIN:", type="password", max_chars=4,
+                                                   placeholder="ตัวเลข 4 หลัก")
+                            if st.form_submit_button("เข้าสู่ระบบ", type="primary", use_container_width=True):
+                                c=db(); _r=c.execute("SELECT pin_hash,pin_salt FROM all_users WHERE name=?",(us2,)).fetchone(); c.close()
+                                if _r is None:
+                                    st.error("❌ ไม่พบบัญชีนี้")
+                                elif not _r["pin_hash"]:
+                                    # บัญชีที่สร้างไว้ตอนยังไม่มีระบบ PIN → ตั้ง PIN ครั้งแรกตรงนี้
+                                    if not (pin_in.isdigit() and len(pin_in) == 4):
+                                        st.error("บัญชีนี้ยังไม่มี PIN — ตั้งใหม่ได้เลย (ตัวเลข 4 หลัก)")
+                                    else:
+                                        _h,_sl = hash_pin(pin_in)
+                                        c=db(); c.execute("UPDATE all_users SET pin_hash=?,pin_salt=? WHERE name=?",(_h,_sl,us2)); c.commit(); c.close()
+                                        st.session_state["me"]=us2
+                                        st.session_state["_pin_fail"]=0
+                                        heartbeat(us2, force=True)
+                                        flash(f"ตั้ง PIN แล้ว ยินดีต้อนรับ {us2}!", "ok"); st.rerun()
+                                elif check_pin(pin_in, _r["pin_hash"], _r["pin_salt"]):
+                                    st.session_state["me"]=us2
+                                    st.session_state["_pin_fail"]=0
+                                    heartbeat(us2, force=True)
+                                    flash(f"ยินดีต้อนรับ, {us2}!", "ok"); st.rerun()
                                 else:
-                                    _h,_sl = hash_pin(pin_in)
-                                    c=db(); c.execute("UPDATE all_users SET pin_hash=?,pin_salt=? WHERE name=?",(_h,_sl,us2)); c.commit(); c.close()
-                                    st.session_state["me"]=us2; heartbeat(us2)
-                                    flash(f"ตั้ง PIN แล้ว ยินดีต้อนรับ {us2}!", "ok"); st.rerun()
-                            elif check_pin(pin_in, _r["pin_hash"], _r["pin_salt"]):
-                                st.session_state["me"]=us2; heartbeat(us2)
-                                flash(f"ยินดีต้อนรับ, {us2}!", "ok"); st.rerun()
-                            else:
-                                st.error("❌ PIN ไม่ถูกต้อง")
+                                    _f = st.session_state.get("_pin_fail", 0) + 1
+                                    st.session_state["_pin_fail"] = _f
+                                    if _f >= LOGIN_MAX_TRY:
+                                        st.session_state["_pin_lock_until"] = time.time() + LOGIN_LOCK_SEC
+                                        st.session_state["_pin_fail"] = 0
+                                        st.error(f"🔒 ใส่ PIN ผิด {LOGIN_MAX_TRY} ครั้ง "
+                                                 f"— ล็อกไว้ {LOGIN_LOCK_SEC//60} นาที")
+                                    else:
+                                        st.error(f"❌ PIN ไม่ถูกต้อง (เหลืออีก {LOGIN_MAX_TRY-_f} ครั้ง)")
                     st.caption("บัญชีที่สร้างก่อนมีระบบ PIN จะตั้ง PIN ครั้งแรกตอนล็อกอิน")
                 else: st.caption("ยังไม่มีบัญชี")
             else:
@@ -2723,11 +3467,15 @@ elif menu == "account":
                             st.error("⚠️ PIN ต้องเป็นตัวเลข 4 หลัก")
                         elif p1 != p2:
                             st.error("⚠️ PIN ทั้งสองช่องไม่ตรงกัน")
+                        elif p1 in ("1234", "0000", "1111", "1212"):
+                            # [FIX v39] PIN ที่ถูกเดาเป็นอันดับต้น ๆ เสมอ
+                            st.error("⚠️ PIN นี้เดาง่ายเกินไป ลองเลขอื่นที่ไม่เรียงกัน")
                         else:
                             _h,_sl = hash_pin(p1)
                             try:
                                 c=db(); c.execute("INSERT INTO all_users (name,pin_hash,pin_salt) VALUES (?,?,?)",(nn.strip(),_h,_sl)); c.commit(); c.close()
-                                st.session_state["me"]=nn.strip(); heartbeat(nn.strip())
+                                st.session_state["me"]=nn.strip()
+                                heartbeat(nn.strip(), force=True)
                                 flash(f"ยินดีต้อนรับ {nn.strip()}!", "ok"); st.rerun()
                             except sqlite3.IntegrityError:
                                 st.error("❌ มีคนใช้ชื่อนี้แล้ว")
@@ -2753,7 +3501,6 @@ elif menu == "account":
                            "กรุณาเข้าสู่ระบบใหม่")
                 if st.button("🚪 ออกจากระบบ", type="primary"):
                     st.session_state["me"] = None
-                    st.session_state["backup_unlocked"] = False
                     st.rerun()
                 st.stop()
 
@@ -2795,13 +3542,58 @@ elif menu == "account":
                 ebn=st.selectbox("🏦 ธนาคาร:",BANK_LIST,index=bi)
                 eba=st.text_input("🔢 เลขบัญชี:",value=md['bank_account'] or "")
                 if st.form_submit_button("💾 บันทึก",type="primary",use_container_width=True):
-                    fb=ebn if ebn!="-- เลือกธนาคาร --" else ""
-                    c=db(); c.execute("UPDATE all_users SET promptpay=?,bank_name=?,bank_account=? WHERE name=?",(epp,fb,eba,me)); c.commit(); c.close()
-                    flash("บันทึกแล้ว!", "ok"); st.rerun()
+                    # [FIX v39] ตรวจว่าเลขพร้อมเพย์ใช้ทำ QR ได้จริงก่อนบันทึก
+                    #   ของเดิมรับทุกอย่าง พอถึงหน้าสรุปเงิน QR ก็ไม่ขึ้นเฉย ๆ
+                    #   โดยไม่บอกว่าเพราะอะไร เจ้าตัวไม่มีทางรู้ว่ากรอกผิด
+                    _tg, _ = promptpay_target(epp)
+                    if epp.strip() and not _tg:
+                        st.error("⚠️ เลขพร้อมเพย์ไม่ถูกต้อง — ใส่เบอร์มือถือ 10 หลัก "
+                                 "หรือเลขบัตรประชาชน 13 หลัก")
+                    else:
+                        fb=ebn if ebn!="-- เลือกธนาคาร --" else ""
+                        c=db(); c.execute("UPDATE all_users SET promptpay=?,bank_name=?,bank_account=? WHERE name=?",(epp,fb,eba,me)); c.commit(); c.close()
+                        flash("บันทึกแล้ว!", "ok"); st.rerun()
+
+            # ── [FIX v31] เปลี่ยน PIN ──────────────────────────
+            #   ต้องยืนยัน PIN เดิมก่อน กันคนที่มาใช้เครื่องต่อจากเราแล้วแอบเปลี่ยน
+            #   บัญชีที่ยังไม่เคยตั้ง PIN (ของเก่า) จะข้ามขั้นยืนยันให้
+            st.markdown('<div class="section-head">🔑 เปลี่ยน PIN</div>', unsafe_allow_html=True)
+            _has_pin = bool(md['pin_hash'])
+            with st.form("chg_pin", clear_on_submit=True):
+                if _has_pin:
+                    _op = st.text_input("PIN เดิม:", type="password", max_chars=4,
+                                        placeholder="ตัวเลข 4 หลัก")
+                else:
+                    _op = ""
+                    st.caption("บัญชีนี้ยังไม่เคยตั้ง PIN — ตั้งใหม่ได้เลย")
+                _np1 = st.text_input("PIN ใหม่:", type="password", max_chars=4,
+                                     placeholder="ตัวเลข 4 หลัก")
+                _np2 = st.text_input("ยืนยัน PIN ใหม่:", type="password", max_chars=4)
+                if st.form_submit_button("🔑 บันทึก PIN ใหม่", type="primary",
+                                         use_container_width=True):
+                    if _has_pin and not check_pin(_op, md['pin_hash'], md['pin_salt']):
+                        st.error("❌ PIN เดิมไม่ถูกต้อง")
+                    elif not (_np1.isdigit() and len(_np1) == 4):
+                        st.error("⚠️ PIN ใหม่ต้องเป็นตัวเลข 4 หลัก")
+                    elif _np1 != _np2:
+                        st.error("⚠️ PIN ใหม่ทั้งสองช่องไม่ตรงกัน")
+                    elif _np1 in ("1234", "0000", "1111", "1212"):
+                        st.error("⚠️ PIN นี้เดาง่ายเกินไป ลองเลขอื่นที่ไม่เรียงกัน")
+                    elif _has_pin and check_pin(_np1, md['pin_hash'], md['pin_salt']):
+                        st.error("⚠️ PIN ใหม่ซ้ำกับของเดิม")
+                    else:
+                        _h, _sl = hash_pin(_np1)
+                        c = db()
+                        c.execute("UPDATE all_users SET pin_hash=?,pin_salt=? WHERE name=?",
+                                  (_h, _sl, me))
+                        c.commit(); c.close()
+                        flash("เปลี่ยน PIN เรียบร้อยแล้ว", "ok"); st.rerun()
 
             if st.button("🚪 ออกจากระบบ",type="secondary",use_container_width=True):
                 c=db(); c.execute("DELETE FROM online_status WHERE name=?",(me,)); c.commit(); c.close()
-                st.session_state["me"]=None; st.rerun()
+                st.session_state["me"]=None
+                st.session_state.pop("_hb_at", None)   # [FIX v39] ให้ heartbeat เริ่มใหม่ทันทีตอนล็อกอินรอบหน้า
+                st.rerun()
 
     with ar:
         st.markdown('<div class="section-head">🌐 สมาชิกในระบบ</div>', unsafe_allow_html=True)
