@@ -1074,6 +1074,36 @@ div[class*="st-key-tabbar"] .stButton button[kind="primary"] p { color: #1d4ed8 
 ::-webkit-scrollbar { width:4px; height:4px; }
 ::-webkit-scrollbar-track { background:#dbeafe; }
 ::-webkit-scrollbar-thumb { background:#93c5fd; border-radius:4px; }
+
+/* ══ [FIX v47] แถวของที่ต้องหิ้ว — ผู้รับผิดชอบ / ราคา / ลบ อยู่บรรทัดเดียวเสมอ ══
+   ต้องประกาศ "หลัง" บล็อกมือถือด้านบน เพราะกฎยุบคอลัมน์ที่นั่นก็ใช้ !important
+   เหมือนกัน เมื่อ specificity เท่ากัน ตัวที่มาทีหลังจึงชนะ */
+div[class*="st-key-pkrow"] [data-testid="stHorizontalBlock"] {
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    align-items: center !important;
+}
+div[class*="st-key-pkrow"] [data-testid="stHorizontalBlock"] > [data-testid$="olumn"] {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: auto !important;
+}
+div[class*="st-key-pkrow"] [data-testid="stNumberInput"] input {
+    text-align: right !important;
+    padding: 8px 8px !important;
+}
+/* ป้ายบอกยอดที่บันทึกไว้แล้ว ต่อท้ายชื่อของ */
+.pk-amt {
+    display:inline-block; background:#1d4ed8; color:#fff !important;
+    border-radius:20px; padding:1px 9px; font-size:11px; font-weight:700;
+    margin-left:6px; vertical-align:middle; font-variant-numeric:tabular-nums;
+}
+@media (max-width: 640px) {
+    /* ซ่อนปุ่ม +/- ของช่องตัวเลขบนจอแคบ ไม่งั้นช่องพิมพ์เหลือนิดเดียว */
+    div[class*="st-key-pkrow"] [data-testid="stNumberInputStepUp"],
+    div[class*="st-key-pkrow"] [data-testid="stNumberInputStepDown"] { display: none !important; }
+    div[class*="st-key-pkrow"] [data-testid="stNumberInput"] input { font-size: 15px !important; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1720,6 +1750,63 @@ def locked_notice(closed):
         st.info("🔒 ทริปนี้ปิดแล้ว — ดูย้อนหลังได้อย่างเดียว "
                 "ถ้าต้องแก้ ให้เปิดทริปอีกครั้งที่เมนู จัดการ → Events")
     return closed
+
+
+def pack_sync_price(trip_id, pack_id, item_label, amount, payer, members, expense_id):
+    """[FIX v47] ใส่ราคาในแถวของที่ต้องหิ้ว แล้วซิงก์กับตารางบิลให้เอง
+       ยังไม่มีบิล + ใส่เงิน  → สร้างบิลใหม่ หารทุกคน + ติ๊กว่าเตรียมแล้ว
+       มีบิลแล้ว  + แก้เงิน  → อัปเดตยอดบิลเดิม (ห้ามสร้างใหม่ ไม่งั้นยอดเด้งเป็นสองเท่า)
+       มีบิลแล้ว  + ใส่ 0    → ลบบิลนั้นแล้วปลดการผูก
+       คืน (ok, ข้อความ) — ข้อความว่าง = ไม่มีอะไรต้องแจ้ง"""
+    if not members:
+        return False, "ยังไม่มีสมาชิกในทริป"
+    amount = float(amount or 0)
+    c = db()
+    try:
+        # ── ใส่ 0 ทับบิลเดิม = ยกเลิกบิล ──
+        if expense_id and amount <= 0:
+            c.execute("DELETE FROM expenses WHERE id=?", (expense_id,))
+            c.execute("UPDATE packing SET expense_id=NULL WHERE id=?", (pack_id,))
+            c.commit()
+            return True, f"ยกเลิกบิลของ '{item_label}' แล้ว"
+        if amount <= 0:
+            return False, ""      # ไม่มีบิลอยู่แล้ว และไม่ได้ใส่เงิน = ไม่ต้องทำอะไร
+
+        act = "บันทึก"
+        if expense_id:
+            # คงคนหารและวิธีหารเดิมไว้ ถ้าเผลอเขียนทับ บิลที่เคยแก้มือจะพัง
+            _old = c.execute("SELECT split_members,split_detail FROM expenses WHERE id=?",
+                             (expense_id,)).fetchone()
+            if _old is None:
+                expense_id = None     # บิลถูกลบไปจากแท็บประวัติ → ถือว่ายังไม่มีบิล
+            else:
+                sp  = [x for x in (_old["split_members"] or "").split(",") if x] or list(members)
+                det = _old["split_detail"]
+                c.execute("UPDATE expenses SET description=?,amount=?,payer_name=? WHERE id=?",
+                          (item_label, amount, payer, expense_id))
+                eid, act = expense_id, "แก้ยอด"
+
+        if not expense_id:
+            sp, det = list(members), None
+            c.execute("INSERT INTO expenses (trip_id,description,amount,payer_name,split_members) "
+                      "VALUES (?,?,?,?,?)",
+                      (trip_id, item_label, amount, payer, ",".join(members)))
+            eid = c.execute("SELECT last_insert_rowid() AS i").fetchone()["i"]
+            c.execute("UPDATE packing SET expense_id=?, done=1 WHERE id=?", (eid, pack_id))
+
+        sh = split_amounts(amount, sp, det, seed=eid)
+        for m2 in sp:
+            if m2 != payer:
+                c.execute("INSERT INTO notifications (trip_id,to_user,from_user,message,is_auto,is_read,timestamp) "
+                          "VALUES (?,?,'ระบบสรุปยอด',?,1,0,?)",
+                          (trip_id, m2,
+                           f"🎒 ของแคมป์ ({act}): '{item_label}'\n"
+                           f"💰 {amount:,.2f} บาท | จ่ายโดย: {payer}\n"
+                           f"💸 ส่วนคุณ: {sh.get(m2, 0):,.2f} บาท", now_str()))
+        c.commit()
+    finally:
+        c.close()
+    return True, f"{act} '{item_label}' {amount:,.2f} ฿"
 
 
 def _set_state(**kw):
@@ -2541,14 +2628,25 @@ if menu == "home":
                     f'ของคุณค้างอยู่ {_mine} · ยังไม่มีคนรับ {_free}</div>',
                     unsafe_allow_html=True)
 
+                # [FIX v47] ยอดบิลของทุกรายการ — ดึงครั้งเดียวก่อนเข้าลูป
+                #   ถ้า query ทีละแถวจะเปิด-ปิด connection หลายรอบต่อการวาดหนึ่งครั้ง
+                #   ซึ่งไปแย่งล็อกเขียนกับ heartbeat ของคนอื่นในทริป
+                c = db()
+                _amt_of = {x["id"]: x["amount"] for x in
+                           c.execute("SELECT id,amount FROM expenses WHERE trip_id=?",
+                                     (trip_id,)).fetchall()}
+                c.close()
+
                 for r in packs:
                     k = r['id']
+                    _eid = r['expense_id']
+                    _cur_amt = float(_amt_of.get(_eid, 0.0)) if _eid else 0.0
+                    _lbl_item = r["item"] + (f" ({r['qty']})" if r["qty"] else "")
                     # [FIX v39] แยกเป็น 2 แถว: บรรทัดบน = ติ๊ก + ชื่อของ (อ่านง่าย)
-                    #   บรรทัดล่าง = เลือกคนรับ + ปุ่มลบ ซึ่งบนมือถือจะยุบเป็นเต็มบรรทัด
-                    #   ของเดิมยัด 4 คอลัมน์ในแถวเดียว บนจอ 380px เหลือช่องละ ~85px
+                    #   บรรทัดล่าง = คนรับ + ราคา + ปุ่มลบ
+                    # [FIX v47] บรรทัดล่างห่อด้วยคอนเทนเนอร์ที่มี key เพื่อให้ CSS
+                    #   บังคับให้อยู่บรรทัดเดียวบนมือถือ (ไม่ยุบตามกฎรวม)
                     row = st.columns([0.9, 6])
-                    row2 = st.columns([3, 1])
-                    row = [row[0], row[1], row2[0], row2[1]]
                     # [FIX v37] ใส่ค่า done ลงใน key ด้วย
                     #   ปัญหาเดิม: Streamlit จำค่า checkbox ตาม key ไว้ใน session
                     #   และค่าที่จำไว้ "ชนะ" พารามิเตอร์ value= เสมอ
@@ -2567,65 +2665,63 @@ if menu == "home":
                     _own = (f'<span class="pk-who" style="background:{person_color(r["assignee"])};">'
                             f'{esc(r["assignee"])}</span>' if r['assignee']
                             else '<span class="pk-who pk-none">ยังไม่มีคนรับ</span>')
-                    _paid_tag = ('<span class="pk-who" style="background:#1d4ed8;">💸 ทำเป็นบิลแล้ว</span>'
-                                 if r['expense_id'] else '')
+                    _paid_tag = (f'<span class="pk-amt">💸 {_cur_amt:,.2f} ฿</span>'
+                                 if _eid else '')
                     row[1].markdown(
                         f'<div style="{_sty}padding-top:5px;">'
                         f'<b>{esc(r["item"])}</b>'
                         f'{" · " + esc(r["qty"]) if r["qty"] else ""} {_own}{_paid_tag}</div>',
                         unsafe_allow_html=True)
-                    _opts = ["— ยังไม่มีคนรับ —"] + members
-                    _cur = r['assignee'] if r['assignee'] in members else "— ยังไม่มีคนรับ —"
-                    _pick = row[2].selectbox("ผู้รับผิดชอบ", _opts, index=_opts.index(_cur),
-                                             key=f"pkwho_{k}", label_visibility="collapsed")
-                    if _pick != _cur:
-                        c = db(); c.execute("UPDATE packing SET assignee=? WHERE id=?",
-                                            (None if _pick.startswith("—") else _pick, k)); c.commit(); c.close()
-                        st.rerun()
-                    if row[3].button("ลบ", key=f"pkdel_{k}", use_container_width=True):
-                        c = db(); c.execute("DELETE FROM packing WHERE id=?", (k,)); c.commit(); c.close()
-                        flash("ลบรายการแล้ว", "warn"); st.rerun()
+
+                    with st.container(key=f"pkrow_{k}"):
+                        cA, cB, cC = st.columns([2.6, 1.6, 1.0])
+
+                        _opts = ["— ยังไม่มีคนรับ —"] + members
+                        _cur = r['assignee'] if r['assignee'] in members else "— ยังไม่มีคนรับ —"
+                        _pick = cA.selectbox("ผู้รับผิดชอบ", _opts, index=_opts.index(_cur),
+                                             key=f"pkwho_{k}", label_visibility="collapsed",
+                                             disabled=cur_closed)
+                        if _pick != _cur:
+                            c = db(); c.execute("UPDATE packing SET assignee=? WHERE id=?",
+                                                (None if _pick.startswith("—") else _pick, k)); c.commit(); c.close()
+                            st.rerun()
+
+                        # [FIX v47] ใส่ยอดในแถวได้เลย — พิมพ์แล้วกด Enter หรือคลิกที่อื่น
+                        #   key ผูกกับยอดปัจจุบัน ด้วยเหตุผลเดียวกับ checkbox ข้างบน:
+                        #   ถ้า key คงที่ ค่าที่ Streamlit จำไว้จะชนะ value= แล้วระบบจะ
+                        #   เข้าใจผิดว่าผู้ใช้แก้ยอดอยู่ตลอด → วนบันทึกซ้ำไม่จบ
+                        _price = cB.number_input(
+                            "ราคา", min_value=0.0, step=10.0, value=_cur_amt, format="%.2f",
+                            key=f"pkamt_{k}_{int(round(_cur_amt * 100))}",
+                            label_visibility="collapsed", disabled=cur_closed,
+                            help="ใส่ราคาแล้วกด Enter — ระบบจะทำเป็นบิลหารกันให้เอง")
+
+                        if not cur_closed and abs(float(_price) - _cur_amt) > 0.005:
+                            # คนจ่าย = คนที่รับหน้าที่หิ้วของชิ้นนั้น ถ้ายังไม่มีก็เป็นเรา
+                            _pyr = (r['assignee'] if r['assignee'] in members
+                                    else (me if me in members else (members[0] if members else None)))
+                            _ok, _msg = pack_sync_price(trip_id, k, _lbl_item, _price,
+                                                        _pyr, members, _eid)
+                            if _msg:
+                                flash(_msg + (f" · จ่ายโดย {_pyr}" if _ok and not _eid else ""),
+                                      "ok" if _ok else "err")
+                            st.rerun()
+
+                        if cC.button("ลบ", key=f"pkdel_{k}", use_container_width=True,
+                                     disabled=cur_closed):
+                            c = db(); c.execute("DELETE FROM packing WHERE id=?", (k,)); c.commit(); c.close()
+                            flash("ลบรายการแล้ว", "warn"); st.rerun()
+
                     st.markdown('<div class="pk-sep"></div>', unsafe_allow_html=True)
 
-                # [FIX v28] จุดที่เชื่อมกับระบบบิล — ของที่ซื้อมาแล้วกลายเป็นบิลได้เลย
-                st.markdown('<div class="section-head" style="margin-top:14px;">'
-                            '💸 ซื้อของแล้ว → ทำเป็นบิลหารกัน</div>', unsafe_allow_html=True)
-                _buyable = [r for r in packs if not r['expense_id']]
-                if not _buyable:
-                    st.caption("ทุกรายการถูกบันทึกเป็นบิลไปแล้ว")
-                else:
-                    with st.form("pack_to_bill", clear_on_submit=True):
-                        _lbl = {f"{r['item']}" + (f" ({r['qty']})" if r['qty'] else ""): r['id']
-                                for r in _buyable}
-                        _sel = st.selectbox("รายการที่ซื้อมาแล้ว:", list(_lbl.keys()))
-                        _b1, _b2 = st.columns(2)
-                        _amt = _b1.number_input("จ่ายไปเท่าไหร่ (บาท):", min_value=0.0, step=10.0)
-                        _payer = _b2.selectbox("ใครเป็นคนจ่าย:", members,
-                                               index=members.index(me) if me in members else 0)
-                        if st.form_submit_button("💸 บันทึกเป็นบิลหารกัน", type="primary",
-                                                 use_container_width=True):
-                            if _amt <= 0:
-                                st.error("⚠️ ใส่จำนวนเงินก่อน")
-                            elif not members:
-                                st.error("⚠️ ยังไม่มีสมาชิกในทริป")
-                            else:
-                                _pid = _lbl[_sel]
-                                c = db()
-                                c.execute("INSERT INTO expenses (trip_id,description,amount,payer_name,split_members) "
-                                          "VALUES (?,?,?,?,?)",
-                                          (trip_id, _sel, _amt, _payer, ",".join(members)))
-                                _eid = c.execute("SELECT last_insert_rowid() AS i").fetchone()["i"]
-                                c.execute("UPDATE packing SET expense_id=?, done=1 WHERE id=?", (_eid, _pid))
-                                _sh = split_amounts(_amt, members)
-                                for _m2 in members:
-                                    if _m2 != _payer:
-                                        c.execute("INSERT INTO notifications (trip_id,to_user,from_user,message,is_auto,is_read,timestamp) "
-                                                  "VALUES (?,?,'ระบบสรุปยอด',?,1,0,?)",
-                                                  (trip_id, _m2,
-                                                   f"🎒 ของแคมป์: '{_sel}'\n💰 {_amt:,.2f} บาท | จ่ายโดย: {_payer}\n"
-                                                   f"💸 ส่วนคุณ: {_sh.get(_m2,0):,.2f} บาท", now_str()))
-                                c.commit(); c.close()
-                                flash(f"บันทึก '{_sel}' เป็นบิลแล้ว", "ok"); st.rerun()
+                # [FIX v47] ถอดฟอร์ม "ซื้อของแล้ว → ทำเป็นบิลหารกัน" ที่เคยอยู่ตรงนี้ออก
+                #   เพราะซ้ำกับช่องราคาในแต่ละแถวแล้ว (ของเดิมต้องเลื่อนลงมา
+                #   แล้วเลือกชื่อรายการซ้ำอีกรอบ ทั้งที่เพิ่งเลื่อนผ่านมันมา)
+                _billed = sum(1 for r in packs if r['expense_id'])
+                st.caption(f"💸 ใส่ราคาในช่องของแต่ละรายการได้เลย แล้วกด Enter — "
+                           f"ระบบจะทำเป็นบิลหารกันทุกคนให้เอง "
+                           f"(ตอนนี้ทำเป็นบิลแล้ว {_billed}/{len(packs)} รายการ · "
+                           f"ใส่ 0 เพื่อยกเลิกบิล)")
 
         # ── TAB 5: แคมป์ (พิกัด + อากาศ + เตรียมออฟไลน์) ────────
         if _ht == 4:
